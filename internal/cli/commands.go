@@ -30,6 +30,7 @@ import (
 	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
+	"github.com/archhaeondlg/aiusage/internal/update"
 )
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -99,6 +100,13 @@ var updatePriceCmd = &cobra.Command{
 	Short: "Update pricing from GitHub",
 	Long:  "Fetch the latest config.json from GitHub and update only the pricing section in the local config.",
 	RunE:  runUpdatePriceCmd,
+}
+
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Self-update aiusage from GitHub Releases",
+	Long:  "Download the latest aiusage binary from GitHub Releases and replace the current executable.",
+	RunE:  runUpdateCmd,
 }
 
 func init() {
@@ -546,6 +554,15 @@ func runUpdatePriceCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("update pricing: %w", err)
 	}
 	fmt.Println("  Pricing updated successfully.")
+	return nil
+}
+
+func runUpdateCmd(cmd *cobra.Command, args []string) error {
+	ver, err := update.SelfUpdate()
+	if err != nil {
+		return fmt.Errorf("update: %w", err)
+	}
+	fmt.Printf("  Updated to %s. Restart to use the new version.\n", ver)
 	return nil
 }
 
