@@ -34,7 +34,6 @@ func BuildBlocks(entries []*types.LoadedEntry, opts BlockOptions) ([]*types.Sess
 		return nil, nil
 	}
 
-	limit := parseTokenLimit(opts.TokenLimit)
 	sessionHours := opts.SessionLength
 	if sessionHours <= 0 {
 		sessionHours = defaultSessionHours
@@ -45,6 +44,7 @@ func BuildBlocks(entries []*types.LoadedEntry, opts BlockOptions) ([]*types.Sess
 		return entries[i].Timestamp.Before(entries[j].Timestamp)
 	})
 
+	limit := parseTokenLimit(opts.TokenLimit)
 	blocks := identifyBlocks(entries, time.Duration(sessionHours*float64(time.Hour)))
 	applyTokenLimits(blocks, limit)
 
@@ -175,9 +175,10 @@ func PrintBlocksTable(blocks []*types.SessionBlock, opts BlockOptions) {
 		return
 	}
 
+	limit := parseTokenLimit(opts.TokenLimit)
+
 	noColor := opts.NoColor || opts.Color == "never"
 	style := output.Style{Enabled: !noColor, NoColor: noColor}
-	limit := parseTokenLimit(opts.TokenLimit)
 
 	headers := []string{"Block Start", "Tokens", "Cost (USD)", "Models", "Burn Rate", "Status"}
 	aligns := []output.Align{
@@ -262,7 +263,6 @@ func StatuslineOutput(entries []*types.LoadedEntry, opts BlockOptions) string {
 	if len(entries) == 0 {
 		return "aiusage: no data"
 	}
-	limit := parseTokenLimit(opts.TokenLimit)
 	blocks, _ := BuildBlocks(entries, opts)
 	if len(blocks) == 0 {
 		return "aiusage: no blocks"
@@ -271,13 +271,13 @@ func StatuslineOutput(entries []*types.LoadedEntry, opts BlockOptions) string {
 	// Find active block.
 	for _, block := range blocks {
 		if block.IsActive {
-			proj := ProjectLimit(block, limit)
-			return fmt.Sprintf("⚡ %s | $%.2f | %s/%s tokens | ~%dm left",
+			dur := time.Since(block.StartTime)
+			durStr := formatDuration(dur)
+			return fmt.Sprintf("⚡ %s │ $%.2f │ %s │ %s",
 				strings.Join(block.Models, ","),
 				block.CostUSD,
 				output.FormatNumber(block.TokenCounts.Total()),
-				output.FormatNumber(limit),
-				proj.RemainingMinutes,
+				durStr,
 			)
 		}
 	}
@@ -303,4 +303,14 @@ func appendDistinct(s []string, v string) []string {
 		}
 	}
 	return append(s, v)
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	}
+	return fmt.Sprintf("%dh%dm", int(d.Hours()), int(d.Minutes())%60)
 }
