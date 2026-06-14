@@ -2,11 +2,16 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 )
+
+const configURL = "https://raw.githubusercontent.com/archaeondlg/aiusage/master/config.json"
 
 // Config represents the full config.json configuration file.
 type Config struct {
@@ -47,8 +52,22 @@ func configPath() string {
 }
 
 // loadConfigFile loads config.json from the executable's directory.
+// If the file doesn't exist, downloads a default from GitHub.
 func loadConfigFile() (map[string]any, error) {
 	data, err := os.ReadFile(configPath())
+	if err == nil {
+		var cfg map[string]any
+		if err := json.Unmarshal(data, &cfg); err == nil {
+			return cfg, nil
+		}
+	}
+	// Not found locally — download from GitHub.
+	fmt.Fprintln(os.Stderr, "→ Downloading default config.json from GitHub...")
+	if err := downloadConfig(); err != nil {
+		return nil, fmt.Errorf("download config: %w", err)
+	}
+	fmt.Fprintln(os.Stderr, "  config.json saved")
+	data, err = os.ReadFile(configPath())
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +76,63 @@ func loadConfigFile() (map[string]any, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+// downloadConfig fetches the default config.json from GitHub.
+func downloadConfig() error {
+	resp, err := http.Get(configURL)
+	if err != nil {
+		return fmt.Errorf("fetch %s: %w", configURL, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath(), data, 0644)
+}
+
+// UpdatePricingFromGitHub fetches the latest config.json from GitHub
+// and merges only the pricing section into the local config.
+func UpdatePricingFromGitHub() error {
+	resp, err := http.Get(configURL)
+	if err != nil {
+		return fmt.Errorf("fetch pricing: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var remoteCfg map[string]any
+	if err := json.Unmarshal(data, &remoteCfg); err != nil {
+		return fmt.Errorf("parse remote config: %w", err)
+	}
+	remotePricing, ok := remoteCfg["pricing"]
+	if !ok {
+		return fmt.Errorf("no pricing field in remote config")
+	}
+
+	// Read local config (or start fresh).
+	localCfg := map[string]any{}
+	if localData, err := os.ReadFile(configPath()); err == nil {
+		json.Unmarshal(localData, &localCfg)
+	}
+
+	// Update only the pricing field.
+	localCfg["pricing"] = remotePricing
+
+	out, err := json.MarshalIndent(localCfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath(), out, 0644)
 }
 
 // loadPricingFromConfig reads config.json and extracts the pricing field.

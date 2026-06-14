@@ -53,6 +53,7 @@ func init() {
 	rootCmd.AddCommand(blocksCmd)
 	rootCmd.AddCommand(statuslineCmd)
 	rootCmd.AddCommand(daemonCmd)
+	rootCmd.AddCommand(updatePriceCmd)
 	rootCmd.AddCommand(allCmd)
 
 	// Agent-specific subcommands.

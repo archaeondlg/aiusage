@@ -94,6 +94,13 @@ Examples:
 	RunE: runDaemonCmd,
 }
 
+var updatePriceCmd = &cobra.Command{
+	Use:   "update-price",
+	Short: "Update pricing from GitHub",
+	Long:  "Fetch the latest config.json from GitHub and update only the pricing section in the local config.",
+	RunE:  runUpdatePriceCmd,
+}
+
 func init() {
 	// Blocks-specific flags.
 	blocksCmd.Flags().String("token-limit", "500000", "Token limit for projections")
@@ -531,6 +538,15 @@ func runDaemonCmd(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 	return daemon.Run(ctx, opts)
+}
+
+func runUpdatePriceCmd(cmd *cobra.Command, args []string) error {
+	fmt.Println("→ Fetching latest pricing from GitHub...")
+	if err := UpdatePricingFromGitHub(); err != nil {
+		return fmt.Errorf("update pricing: %w", err)
+	}
+	fmt.Println("  Pricing updated successfully.")
+	return nil
 }
 
 func flagStr(cmd *cobra.Command, name string) string {
