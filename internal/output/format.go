@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 // FormatNumber formats large numbers with B/M/K suffix, small numbers with commas.
@@ -115,7 +116,7 @@ var ansiRE = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 
 // visibleLen returns the display width of a string after stripping ANSI codes.
 func visibleLen(s string) int {
-	return len(ansiRE.ReplaceAllString(s, ""))
+	return utf8.RuneCountInString(ansiRE.ReplaceAllString(s, ""))
 }
 
 // padVisible pads a string to the given visual width, preserving ANSI codes.
@@ -158,9 +159,10 @@ func truncateVisible(s string, visWidth int) string {
 		if visible >= visWidth {
 			break
 		}
-		buf.WriteByte(s[i])
+		_, size := utf8.DecodeRuneInString(s[i:])
+		buf.WriteString(s[i : i+size])
 		visible++
-		i++
+		i += size
 	}
 	buf.WriteString("\x1b[0m")
 	return buf.String()
@@ -314,7 +316,8 @@ func (t *SimpleTable) Render() string {
 				if ci < len(t.aligns) {
 					align = t.aligns[ci]
 				}
-				buf.WriteString(padVisible(line, colWidths[ci], align))
+				s := padVisible(line, colWidths[ci], align)
+				buf.WriteString(s)
 			}
 			buf.WriteByte('\n')
 		}

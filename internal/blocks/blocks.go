@@ -79,7 +79,7 @@ func identifyBlocks(entries []*types.LoadedEntry, sessionDuration time.Duration)
 					StartTime: currentBlock.EndTime,
 					EndTime:   entry.Timestamp,
 					IsGap:     true,
-					Models:    []string{"—"},
+					Models:    nil,
 				}
 				blocks = append(blocks, gapBlock)
 			}
@@ -193,17 +193,21 @@ func PrintBlocksTable(blocks []*types.SessionBlock, opts BlockOptions) {
 			status = "Complete"
 		}
 		if block.IsGap {
-			status = "Gap (no data)"
+			tbl.Push([]string{"—", "—", "—", "—", "—", "Gap"})
+			continue
 		}
-
 		rate := CalculateBurnRate(block)
 		burnStr := fmt.Sprintf("%.0f t/m", rate.TokensPerMinute)
 
+		models := "—"
+		if len(block.Models) > 0 {
+			models = output.FormatModelsMultiline(block.Models)
+		}
 		tbl.Push([]string{
 			block.StartTime.Format("2006-01-02 15:04"),
 			output.FormatNumber(block.TokenCounts.Total()),
 			output.FormatCurrency(block.CostUSD),
-			strings.Join(block.Models, ", "),
+			models,
 			burnStr,
 			status,
 		})
