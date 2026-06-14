@@ -8,7 +8,7 @@ import (
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 )
 
-// Config represents the full aiusage.json configuration file.
+// Config represents the full config.json configuration file.
 type Config struct {
 	Defaults  ConfigDefaults            `json:"defaults"`
 	Commands  map[string]CommandConfig  `json:"commands"`
@@ -37,47 +37,29 @@ type CommandConfig struct {
 	Offline         bool   `json:"offline"`
 }
 
-// configPaths returns possible locations for aiusage.json.
-func configPaths() []string {
-	var paths []string
-
-	// XDG config home.
-	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		paths = append(paths, filepath.Join(xdg, "aiusage", "aiusage.json"))
+// configPath returns the config file path in the executable's directory.
+func configPath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "config.json"
 	}
-
-	// Default config home.
-	home, err := os.UserHomeDir()
-	if err == nil {
-		paths = append(paths,
-			filepath.Join(home, ".config", "aiusage", "aiusage.json"),
-			filepath.Join(home, ".aiusage.json"),
-		)
-	}
-
-	// Current directory.
-	paths = append(paths, "aiusage.json")
-
-	return paths
+	return filepath.Join(filepath.Dir(exe), "config.json")
 }
 
-// loadConfigFile loads the first found aiusage.json.
+// loadConfigFile loads config.json from the executable's directory.
 func loadConfigFile() (map[string]any, error) {
-	for _, path := range configPaths() {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		var cfg map[string]any
-		if err := json.Unmarshal(data, &cfg); err != nil {
-			continue
-		}
-		return cfg, nil
+	data, err := os.ReadFile(configPath())
+	if err != nil {
+		return nil, err
 	}
-	return nil, os.ErrNotExist
+	var cfg map[string]any
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
-// loadPricingFromConfig reads aiusage.json and extracts the pricing field.
+// loadPricingFromConfig reads config.json and extracts the pricing field.
 func loadPricingFromConfig() *pricing.PricingMap {
 	cfg, err := loadConfigFile()
 	if err != nil {
