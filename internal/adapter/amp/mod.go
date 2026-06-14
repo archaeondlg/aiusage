@@ -1,28 +1,12 @@
 package amp
 
-import (
-	"context"
+import "github.com/archhaeondlg/aiusage/internal/adapter/shared"
 
-	"github.com/archhaeondlg/aiusage/internal/adapter"
-	"github.com/archhaeondlg/aiusage/internal/types"
-)
+type AmpAdapter struct{ *shared.GenericAdapter }
 
-type AmpAdapter struct{}
-
-func NewAdapter() *AmpAdapter { return &AmpAdapter{} }
-func (a *AmpAdapter) Name() string { return "amp" }
-
-func (a *AmpAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptions) ([]*types.LoadedEntry, error) {
-	return nil, nil
+func NewAdapter() *AmpAdapter {
+	return &AmpAdapter{shared.NewGenericAdapter("amp", []string{
+		"~/.amp",
+		"~/.config/amp",
+	})}
 }
-
-func (a *AmpAdapter) Summarize(entries []*types.LoadedEntry, kind types.ReportKind) ([]*types.UsageSummary, error) {
-	return nil, nil
-}
-
-func (a *AmpAdapter) ReportJSON(rows []*types.UsageSummary, kind types.ReportKind) (any, error) {
-	return map[string]any{"daily": rows, "totals": nil}, nil
-}
-
-func (a *AmpAdapter) Paths() ([]string, error) { return nil, nil }
-func (a *AmpAdapter) IsAvailable() bool { return false }

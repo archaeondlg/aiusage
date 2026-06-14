@@ -1,28 +1,12 @@
 package copilot
 
-import (
-	"context"
+import "github.com/archhaeondlg/aiusage/internal/adapter/shared"
 
-	"github.com/archhaeondlg/aiusage/internal/adapter"
-	"github.com/archhaeondlg/aiusage/internal/types"
-)
+type CopilotAdapter struct{ *shared.GenericAdapter }
 
-type CopilotAdapter struct{}
-
-func NewAdapter() *CopilotAdapter { return &CopilotAdapter{} }
-func (a *CopilotAdapter) Name() string { return "copilot" }
-
-func (a *CopilotAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptions) ([]*types.LoadedEntry, error) {
-	return nil, nil
+func NewAdapter() *CopilotAdapter {
+	return &CopilotAdapter{shared.NewGenericAdapter("copilot", []string{
+		"~/.github-copilot",
+		"~/.config/github-copilot",
+	})}
 }
-
-func (a *CopilotAdapter) Summarize(entries []*types.LoadedEntry, kind types.ReportKind) ([]*types.UsageSummary, error) {
-	return nil, nil
-}
-
-func (a *CopilotAdapter) ReportJSON(rows []*types.UsageSummary, kind types.ReportKind) (any, error) {
-	return map[string]any{"daily": rows, "totals": nil}, nil
-}
-
-func (a *CopilotAdapter) Paths() ([]string, error) { return nil, nil }
-func (a *CopilotAdapter) IsAvailable() bool { return false }

@@ -1,28 +1,12 @@
 package openclaw
 
-import (
-	"context"
+import "github.com/archhaeondlg/aiusage/internal/adapter/shared"
 
-	"github.com/archhaeondlg/aiusage/internal/adapter"
-	"github.com/archhaeondlg/aiusage/internal/types"
-)
+type OpenclawAdapter struct{ *shared.GenericAdapter }
 
-type OpenclawAdapter struct{}
-
-func NewAdapter() *OpenclawAdapter { return &OpenclawAdapter{} }
-func (a *OpenclawAdapter) Name() string { return "openclaw" }
-
-func (a *OpenclawAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptions) ([]*types.LoadedEntry, error) {
-	return nil, nil
+func NewAdapter() *OpenclawAdapter {
+	return &OpenclawAdapter{shared.NewGenericAdapter("openclaw", []string{
+		"~/.openclaw",
+		"~/.config/openclaw",
+	})}
 }
-
-func (a *OpenclawAdapter) Summarize(entries []*types.LoadedEntry, kind types.ReportKind) ([]*types.UsageSummary, error) {
-	return nil, nil
-}
-
-func (a *OpenclawAdapter) ReportJSON(rows []*types.UsageSummary, kind types.ReportKind) (any, error) {
-	return map[string]any{"daily": rows, "totals": nil}, nil
-}
-
-func (a *OpenclawAdapter) Paths() ([]string, error) { return nil, nil }
-func (a *OpenclawAdapter) IsAvailable() bool { return false }
