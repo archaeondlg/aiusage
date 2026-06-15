@@ -7,11 +7,13 @@ package daemon
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -124,6 +126,9 @@ func Run(ctx context.Context, opts DaemonOptions) error {
 	ticker := time.NewTicker(opts.Interval)
 	defer ticker.Stop()
 
+	// Prevent overlapping polls.
+	var polling atomic.Bool
+
 	// Print header once in terminal mode.
 	if !opts.JSON {
 		printDaemonHeader(opts, style)
@@ -147,12 +152,18 @@ func Run(ctx context.Context, opts DaemonOptions) error {
 			}
 			return nil
 		case <-ticker.C:
+			if !polling.CompareAndSwap(false, true) {
+				slog.Warn("daemon: skipped poll — previous cycle still running")
+				continue
+			}
 			if err := pollAndPrint(ctx, agents, pricingMap, style, opts); err != nil {
 				if ctx.Err() != nil {
+					polling.Store(false)
 					return nil
 				}
 				fmt.Fprintf(os.Stderr, "daemon: poll error: %v\n", err)
 			}
+			polling.Store(false)
 		}
 	}
 }
