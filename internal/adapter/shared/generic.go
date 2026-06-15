@@ -2,6 +2,8 @@ package shared
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -31,7 +33,10 @@ func (a *GenericAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptio
 		pm = pricing.LoadDefaultPricing()
 	}
 
-	paths, _ := a.Paths()
+	paths, err := a.Paths()
+	if err != nil {
+		slog.Debug("adapter paths error", "adapter", a.name, "error", err)
+	}
 	files := FindJSONLFiles(paths)
 	if len(files) == 0 {
 		return nil, nil
@@ -67,7 +72,10 @@ func (a *GenericAdapter) ReportJSON(rows []*types.UsageSummary, kind types.Repor
 
 func (a *GenericAdapter) Paths() ([]string, error) {
 	var found []string
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("resolve home dir: %w", err)
+	}
 	for _, dir := range a.dirs {
 		// Expand ~/ to home directory.
 		d := dir
@@ -110,12 +118,14 @@ func TotalsFromRows(rows []*types.UsageSummary) map[string]any {
 
 func parseJSONLFile(path string, pm pricing.PricingProvider) []*types.LoadedEntry {
 	var entries []*types.LoadedEntry
-	_ = ReadJSONLLines(path, func(line []byte) error {
+	if err := ReadJSONLLines(path, func(line []byte) error {
 		entry := ParseGenericEntry(line, pm)
 		if entry != nil {
 			entries = append(entries, entry)
 		}
 		return nil
-	})
+	}); err != nil {
+		slog.Debug("skipping malformed JSONL file", "path", path, "error", err)
+	}
 	return entries
 }
