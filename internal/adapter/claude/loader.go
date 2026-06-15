@@ -554,12 +554,6 @@ func readChunkTimeout(path string, cr chunkRange, timeout time.Duration) ([]byte
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 func dedupEntries(files []*types.LoadedFile, projectFilter string) []*types.LoadedEntry {
-	type dedupeKey struct {
-		hash  uint64
-		index int
-	}
-	_ = dedupeKey{}
-
 	dedupedIdxs := make(map[uint64][]int)
 	var deduped []*types.LoadedEntry
 
