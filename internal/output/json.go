@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 
@@ -147,7 +148,7 @@ func GroupProjectOutput(rows []*types.UsageSummary) map[string][]map[string]any 
 
 // jsonFloat formats a float64 for JSON: whole numbers become integers.
 func jsonFloat(value float64) any {
-	if value == float64(int64(value)) && value >= -9007199254740991 && value <= 9007199254740991 {
+	if value == math.Trunc(value) && !math.IsInf(value, 0) && math.Abs(value) <= 1<<53 {
 		return int64(value)
 	}
 	return value
