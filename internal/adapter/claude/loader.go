@@ -202,18 +202,24 @@ func readUsageFile(
 	tz *time.Location,
 	pm pricing.PricingProvider,
 ) *types.LoadedFile {
-	// Run with timeout — some files cause parseLines to hang forever.
+	// Run with cancellation — some files cause parseLines to hang forever.
 	type result struct {
 		lf *types.LoadedFile
 	}
 	ch := make(chan result, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	go func() {
-		ch <- result{readUsageFileInner(path, tz, pm)}
+		lf := readUsageFileInner(path, tz, pm)
+		select {
+		case ch <- result{lf}:
+		case <-ctx.Done():
+		}
 	}()
 	select {
 	case r := <-ch:
 		return r.lf
-	case <-time.After(10 * time.Second):
+	case <-ctx.Done():
 		fmt.Fprintf(os.Stderr, "WARN  skipping %s: timeout\n", path)
 		return &types.LoadedFile{Entries: make([]*types.LoadedEntry, 0)}
 	}
@@ -238,6 +244,8 @@ func readUsageFileInner(
 	return lf
 }
 
+var usageMarker = []byte(`"usage":{"`)
+
 func parseLines(
 	data []byte,
 	lf *types.LoadedFile,
@@ -245,7 +253,6 @@ func parseLines(
 	pm pricing.PricingProvider,
 	project, sessionID, projectPath string,
 ) {
-	usageMarker := []byte(`"usage":{"`)
 
 	for len(data) > 0 {
 		nl := bytes.IndexByte(data, '\n')
@@ -261,58 +268,51 @@ func parseLines(
 			data = data[nl+1:]
 		}
 
-		if !bytes.Contains(line, usageMarker) {
-			continue
-		}
-		if HasUnsupportedNullField(line) {
-			continue
-		}
-		entry, err := ParseUsageEntry(line)
-		if err != nil || !IsValidUsageEntry(entry) {
-			continue
-		}
-		timestamp, err := dateutil.ParseTimestamp(entry.Timestamp)
-		if err != nil {
-			continue
-		}
-		if lf.Timestamp == nil || timestamp.Before(*lf.Timestamp) {
-			lf.Timestamp = &timestamp
-		}
-		date := dateutil.FormatDate(timestamp, tz)
-		cost := calculateEntryCost(entry, pm)
-		missingModel := missingPricingModel(entry, pm)
-
-		var model *string
-		if entry.Message.Model != nil && *entry.Message.Model != "<synthetic>" {
-			m := *entry.Message.Model
-			if entry.Message.Usage.Speed != nil && *entry.Message.Usage.Speed == types.SpeedFast {
-				m += "-fast"
+		if le := processEntry(line, pm, tz, project); le != nil {
+			if lf.Timestamp == nil || le.Timestamp.Before(*lf.Timestamp) {
+				lf.Timestamp = &le.Timestamp
 			}
-			model = &m
+			lf.Entries = append(lf.Entries, le)
 		}
+	}
+}
 
-		var resetTime *time.Time
-		if entry.IsAPIErrorMsg != nil && *entry.IsAPIErrorMsg {
-			if rt := extractUsageLimitReset(line); rt != nil {
-				resetTime = rt
-				if lf.Timestamp == nil || rt.Before(*lf.Timestamp) {
-					lf.Timestamp = rt
-				}
-			}
+func processEntry(line []byte, pm pricing.PricingProvider, tz *time.Location, project string) *types.LoadedEntry {
+	if !bytes.Contains(line, usageMarker) {
+		return nil
+	}
+	if HasUnsupportedNullField(line) {
+		return nil
+	}
+	entry, err := ParseUsageEntry(line)
+	if err != nil || !IsValidUsageEntry(entry) {
+		return nil
+	}
+	timestamp, err := dateutil.ParseTimestamp(entry.Timestamp)
+	if err != nil {
+		return nil
+	}
+	date := dateutil.FormatDate(timestamp, tz)
+	cost := calculateEntryCost(entry, pm)
+	missingModel := missingPricingModel(entry, pm)
+
+	var model *string
+	if entry.Message.Model != nil && *entry.Message.Model != "<synthetic>" {
+		m := *entry.Message.Model
+		if entry.Message.Usage.Speed != nil && *entry.Message.Usage.Speed == types.SpeedFast {
+			m += "-fast"
 		}
+		model = &m
+	}
 
-		lf.Entries = append(lf.Entries, &types.LoadedEntry{
-			Data:                *entry,
-			Timestamp:           timestamp,
-			Date:                date,
-			Project:             project,
-			SessionID:           sessionID,
-			ProjectPath:         projectPath,
-			Cost:                cost,
-			Model:               model,
-			UsageLimitResetTime: resetTime,
-			MissingPricingModel: missingModel,
-		})
+	return &types.LoadedEntry{
+		Data:                *entry,
+		Timestamp:           timestamp,
+		Date:                date,
+		Project:             project,
+		Cost:                cost,
+		Model:               model,
+		MissingPricingModel: missingModel,
 	}
 }
 
@@ -477,7 +477,6 @@ func readChunk(
 
 	// Parse lines and collect into result.
 	project := ExtractProject(path)
-	usageMarker := []byte(`"usage":{"`)
 
 	for len(data) > 0 {
 		nl := bytes.IndexByte(data, '\n')
@@ -493,47 +492,12 @@ func readChunk(
 			data = data[nl+1:]
 		}
 
-		if !bytes.Contains(line, usageMarker) {
-			continue
-		}
-		if HasUnsupportedNullField(line) {
-			continue
-		}
-		entry, err := ParseUsageEntry(line)
-		if err != nil || !IsValidUsageEntry(entry) {
-			continue
-		}
-		timestamp, err := dateutil.ParseTimestamp(entry.Timestamp)
-		if err != nil {
-			continue
-		}
-		if result.ts == nil || timestamp.Before(*result.ts) {
-			result.ts = &timestamp
-		}
-		date := dateutil.FormatDate(timestamp, tz)
-		cost := calculateEntryCost(entry, pm)
-		missingModel := missingPricingModel(entry, pm)
-
-		var model *string
-		if entry.Message.Model != nil && *entry.Message.Model != "<synthetic>" {
-			m := *entry.Message.Model
-			if entry.Message.Usage.Speed != nil && *entry.Message.Usage.Speed == types.SpeedFast {
-				m += "-fast"
+		if le := processEntry(line, pm, tz, project); le != nil {
+			if result.ts == nil || le.Timestamp.Before(*result.ts) {
+				result.ts = &le.Timestamp
 			}
-			model = &m
+			result.entries = append(result.entries, le)
 		}
-
-		result.entries = append(result.entries, &types.LoadedEntry{
-			Data:                *entry,
-			Timestamp:           timestamp,
-			Date:                date,
-			Project:             project,
-			SessionID:           "",
-			ProjectPath:         "",
-			Cost:                cost,
-			Model:               model,
-			MissingPricingModel: missingModel,
-		})
 	}
 
 	return result
@@ -544,6 +508,8 @@ func readChunkTimeout(path string, cr chunkRange, timeout time.Duration) ([]byte
 		data []byte
 		err  error
 	}, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 	go func() {
 		f, err := os.Open(path)
 		if err != nil {
@@ -578,7 +544,7 @@ func readChunkTimeout(path string, cr chunkRange, timeout time.Duration) ([]byte
 	select {
 	case r := <-ch:
 		return r.data, r.err
-	case <-time.After(timeout):
+	case <-ctx.Done():
 		return nil, fmt.Errorf("timeout after %v", timeout)
 	}
 }
@@ -777,6 +743,4 @@ func formatSize(n int64) string {
 	return fmt.Sprintf("%.1fMB", float64(n)/(1024*1024))
 }
 
-type ctxKey struct{}
 
-var _ = context.Background

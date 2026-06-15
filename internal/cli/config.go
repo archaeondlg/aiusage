@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 )
+
+var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 const configURL = "https://raw.githubusercontent.com/archaeondlg/aiusage/master/config.json"
 
@@ -80,7 +83,7 @@ func loadConfigFile() (map[string]any, error) {
 
 // downloadConfig fetches the default config.json from GitHub.
 func downloadConfig() error {
-	resp, err := http.Get(configURL)
+	resp, err := httpClient.Get(configURL)
 	if err != nil {
 		return fmt.Errorf("fetch %s: %w", configURL, err)
 	}
@@ -98,7 +101,7 @@ func downloadConfig() error {
 // UpdatePricingFromGitHub fetches the latest config.json from GitHub
 // and merges only the pricing section into the local config.
 func UpdatePricingFromGitHub() error {
-	resp, err := http.Get(configURL)
+	resp, err := httpClient.Get(configURL)
 	if err != nil {
 		return fmt.Errorf("fetch pricing: %w", err)
 	}

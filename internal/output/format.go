@@ -408,8 +408,9 @@ func FormatProjectName(path string, aliases map[string]string) string {
 	if alias, ok := aliases[path]; ok {
 		return alias
 	}
-	// Also check the original key.
-	if alias, ok := aliases[path]; ok {
+	// Also check the normalized path.
+	norm := strings.ReplaceAll(path, "\\", "/")
+	if alias, ok := aliases[norm]; ok && norm != path {
 		return alias
 	}
 	// Extract last path component.
