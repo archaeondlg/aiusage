@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -125,7 +126,9 @@ func UpdatePricingFromGitHub() error {
 	// Read local config (or start fresh).
 	localCfg := map[string]any{}
 	if localData, err := os.ReadFile(configPath()); err == nil {
-		json.Unmarshal(localData, &localCfg)
+		if err := json.Unmarshal(localData, &localCfg); err != nil {
+			slog.Warn("local config is corrupt, starting fresh", "path", configPath(), "error", err)
+		}
 	}
 
 	// Update only the pricing field.
