@@ -144,6 +144,7 @@ func truncateVisible(s string, visWidth int) string {
 	var buf strings.Builder
 	visible := 0
 	i := 0
+	hasANSI := false
 	for i < len(s) {
 		if s[i] == '\x1b' && i+1 < len(s) && s[i+1] == '[' {
 			end := i + 2
@@ -155,6 +156,7 @@ func truncateVisible(s string, visWidth int) string {
 			}
 			buf.WriteString(s[i:end])
 			i = end
+			hasANSI = true
 			continue
 		}
 		if visible >= visWidth {
@@ -165,7 +167,9 @@ func truncateVisible(s string, visWidth int) string {
 		visible++
 		i += size
 	}
-	buf.WriteString("\x1b[0m")
+	if hasANSI {
+		buf.WriteString("\x1b[0m")
+	}
 	return buf.String()
 }
 
