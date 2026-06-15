@@ -1,7 +1,6 @@
 package codex
 
 import (
-	"bufio"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -31,18 +30,18 @@ func isSubagentSession(path string) bool {
 // detectSubagentReplaySecond detects if a subagent file has replayed parent
 // history by finding two token_count events with the same second timestamp.
 func detectSubagentReplaySecond(path string) []byte {
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}
-	defer f.Close()
 
 	var firstSecond []byte
-	scanner := bufio.NewScanner(f)
-	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
-
-	for scanner.Scan() {
-		line := scanner.Bytes()
+	for len(data) > 0 {
+		nl := -1
+		for i, b := range data { if b == '\n' { nl = i; break } }
+		var line []byte
+		if nl < 0 { line = data; data = nil } else { line = data[:nl]; data = data[nl+1:] }
+		if len(line) > 0 && line[len(line)-1] == '\r' { line = line[:len(line)-1] }
 		kind := classifyLine(line)
 		if kind != kindSession {
 			continue
@@ -143,11 +142,10 @@ func visitCodexSessionFile(
 		replaySecond = detectSubagentReplaySecond(path)
 	}
 
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}
-	defer f.Close()
 
 	sessionID := codexSessionID(sessionsDir, path)
 	var previousTotals *codexRawUsage
@@ -156,11 +154,12 @@ func visitCodexSessionFile(
 	fallbackTS := fileModifiedTimestamp(path)
 	skipReplay := replaySecond != nil
 
-	scanner := bufio.NewScanner(f)
-	scanner.Buffer(make([]byte, 0, 256*1024), 10*1024*1024)
-
-	for scanner.Scan() {
-		line := scanner.Bytes()
+	for len(data) > 0 {
+		nl := -1
+		for i, b := range data { if b == '\n' { nl = i; break } }
+		var line []byte
+		if nl < 0 { line = data; data = nil } else { line = data[:nl]; data = data[nl+1:] }
+		if len(line) > 0 && line[len(line)-1] == '\r' { line = line[:len(line)-1] }
 		kind := classifyLine(line)
 		if kind == kindUnknown {
 			continue

@@ -2,7 +2,7 @@
 package shared
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"io/fs"
 	"os"
@@ -31,16 +31,23 @@ func FindJSONLFiles(paths []string) []string {
 
 // ReadJSONLLines reads a JSONL file and calls the handler for each parsed line.
 func ReadJSONLLines(path string, handler func([]byte) error) error {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
-	for scanner.Scan() {
-		line := scanner.Bytes()
+	for len(data) > 0 {
+		nl := bytes.IndexByte(data, '\n')
+		var line []byte
+		if nl < 0 {
+			line = data
+			data = nil
+		} else {
+			line = data[:nl]
+			if len(line) > 0 && line[len(line)-1] == '\r' {
+				line = line[:len(line)-1]
+			}
+			data = data[nl+1:]
+		}
 		if len(line) == 0 {
 			continue
 		}
@@ -48,7 +55,7 @@ func ReadJSONLLines(path string, handler func([]byte) error) error {
 			return err
 		}
 	}
-	return scanner.Err()
+	return nil
 }
 
 // ParseJSONLFile reads and parses all JSONL entries from a file into the given type.

@@ -383,6 +383,11 @@
       "output": 0.000006,
       "cacheRead": 0.0000002
     },
+    "grok-4-1-fast-reasoning": {
+      "input": 0.0000002,
+      "output": 0.0000005,
+      "cacheRead": 0.00000005
+    },
     "grok-4.1-fast": {
       "input": 0.0000002,
       "output": 0.0000005,
@@ -503,6 +508,11 @@
       "input": 0.0000015,
       "output": 0.000009,
       "cacheRead": 0.00000015
+    },
+    "gemini-3-1-flash-lite": {
+      "input": 0.00000025,
+      "output": 0.0000015,
+      "cacheRead": 0.000000025
     },
     "step-3.5-flash-2603": {
       "input": 0.0000001,
