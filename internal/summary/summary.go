@@ -280,12 +280,14 @@ func AggregateSummaries(rows []*types.UsageSummary) *types.UsageSummary {
 // FilterAndSort filters by date range and sorts summaries.
 func FilterAndSort(rows []*types.UsageSummary, since, until string, order types.SortOrder, dateFn func(*types.UsageSummary) string) []*types.UsageSummary {
 	var filtered []*types.UsageSummary
+	sinceNorm := dateutil.NormalizeDateBound(since)
+	untilNorm := dateutil.NormalizeDateBound(until)
 	for _, row := range rows {
 		date := dateutil.NormalizeDateBound(dateFn(row))
-		if since != "" && date < since {
+		if sinceNorm != "" && date < sinceNorm {
 			continue
 		}
-		if until != "" && date > until {
+		if untilNorm != "" && date > untilNorm {
 			continue
 		}
 		filtered = append(filtered, row)
