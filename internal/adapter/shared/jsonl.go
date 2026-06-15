@@ -8,8 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/archhaeondlg/aiusage/internal/types"
 )
 
 // FindJSONLFiles recursively discovers all .jsonl files under the given paths.
@@ -72,17 +70,4 @@ func ParseJSONLFile[T any](path string) ([]T, error) {
 	return results, err
 }
 
-// SimpleLoader provides a basic LoadEntries implementation for adapters
-// that read JSONL files from well-known paths and parse them into entries.
-type SimpleLoader struct {
-	pathsFn     func() ([]string, error)
-	parserFn    func(path string, entry []byte) (*types.LoadedEntry, error)
-}
 
-// NewSimpleLoader creates a SimpleLoader.
-func NewSimpleLoader(
-	pathsFn func() ([]string, error),
-	parserFn func(path string, entry []byte) (*types.LoadedEntry, error),
-) *SimpleLoader {
-	return &SimpleLoader{pathsFn: pathsFn, parserFn: parserFn}
-}
