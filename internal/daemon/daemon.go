@@ -94,7 +94,7 @@ func Run(ctx context.Context, opts DaemonOptions) error {
 	}
 
 	// Load pricing from config with builtin defaults.
-	pricingMap := pricing.LoadDefaultPricing()
+	pricingMap := pricing.NewCachedProvider(pricing.LoadDefaultPricing())
 
 	style := output.Style{Enabled: !opts.NoColor, NoColor: opts.NoColor}
 

@@ -159,5 +159,5 @@ func loadPricingFromConfig() pricing.PricingProvider {
 		return pricing.LoadDefaultPricing()
 	}
 
-	return pricing.LoadPricing(entries)
+	return pricing.NewCachedProvider(pricing.LoadPricing(entries))
 }
