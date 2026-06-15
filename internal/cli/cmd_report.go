@@ -37,6 +37,8 @@ func runAgentReport(cmd *cobra.Command, agent, kind string) error {
 	opts.Agent = agent
 	opts.Kind = kind
 
+	InitLogging(opts.Verbose, flagBool(cmd, "log-json"))
+
 	pricingMap := loadPricingFromConfig()
 
 	buildALO := func() adapter.LoadOptions {

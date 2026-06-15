@@ -33,6 +33,7 @@ func init() {
 	flags.Bool("compact", false, "Force compact table layout")
 	flags.Bool("breakdown", false, "Show per-model breakdown rows")
 	flags.CountP("verbose", "v", "Verbose output (-v, -vv, -vvv)")
+	flags.Bool("log-json", false, "JSON log output (for daemon/monitoring)")
 	flags.Bool("no-color", false, "Disable ANSI color output")
 	flags.Bool("single-thread", false, "Disable parallel file loading")
 	flags.String("timezone", "", "Timezone for date grouping (e.g. Asia/Tokyo)")
