@@ -156,17 +156,24 @@ func jsonFloat(value float64) any {
 
 // stripCostJSON recursively removes cost fields from a value.
 func stripCostJSON(v any) {
+	stripCostJSONDepth(v, 0, 64)
+}
+
+func stripCostJSONDepth(v any, depth, maxDepth int) {
+	if depth >= maxDepth {
+		return
+	}
 	switch val := v.(type) {
 	case map[string]any:
 		delete(val, "totalCost")
 		delete(val, "costUSD")
 		delete(val, "cost")
 		for _, child := range val {
-			stripCostJSON(child)
+			stripCostJSONDepth(child, depth+1, maxDepth)
 		}
 	case []any:
 		for _, child := range val {
-			stripCostJSON(child)
+			stripCostJSONDepth(child, depth+1, maxDepth)
 		}
 	}
 }
