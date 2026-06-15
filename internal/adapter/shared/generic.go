@@ -97,7 +97,7 @@ func (a *GenericAdapter) IsAvailable() bool {
 // TotalsFromRows computes total metrics across all rows.
 func TotalsFromRows(rows []*types.UsageSummary) map[string]any {
 	var input, output, cc, cr, extra uint64
-	var cost float64
+	var cost, credits float64
 	for _, r := range rows {
 		input += r.InputTokens
 		output += r.OutputTokens
@@ -105,8 +105,11 @@ func TotalsFromRows(rows []*types.UsageSummary) map[string]any {
 		cr += r.CacheRead
 		extra += r.ExtraTotal
 		cost += r.TotalCost
+		if r.Credits != nil {
+			credits += *r.Credits
+		}
 	}
-	return map[string]any{
+	m := map[string]any{
 		"inputTokens":         input,
 		"outputTokens":        output,
 		"cacheCreationTokens": cc,
@@ -114,6 +117,10 @@ func TotalsFromRows(rows []*types.UsageSummary) map[string]any {
 		"totalTokens":         input + output + cc + cr + extra,
 		"totalCost":           cost,
 	}
+	if credits > 0 {
+		m["credits"] = credits
+	}
+	return m
 }
 
 func parseJSONLFile(path string, pm pricing.PricingProvider) []*types.LoadedEntry {

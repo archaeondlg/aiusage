@@ -15,6 +15,7 @@ import (
 	"os"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
+	"github.com/archhaeondlg/aiusage/internal/adapter/shared"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
 )
@@ -59,7 +60,7 @@ func (a *OpenCodeAdapter) Summarize(entries []*types.LoadedEntry, kind types.Rep
 func (a *OpenCodeAdapter) ReportJSON(rows []*types.UsageSummary, kind types.ReportKind) (any, error) {
 	report := map[string]any{
 		string(kind): rows,
-		"totals":     totalsFromRows(rows),
+		"totals":     shared.TotalsFromRows(rows),
 	}
 	return report, nil
 }
@@ -86,26 +87,7 @@ func (a *OpenCodeAdapter) IsAvailable() bool {
 	return false
 }
 
-func totalsFromRows(rows []*types.UsageSummary) map[string]any {
-	var input, output, cc, cr, extra uint64
-	var cost float64
-	for _, r := range rows {
-		input += r.InputTokens
-		output += r.OutputTokens
-		cc += r.CacheCreation
-		cr += r.CacheRead
-		extra += r.ExtraTotal
-		cost += r.TotalCost
-	}
-	return map[string]any{
-		"inputTokens":        input,
-		"outputTokens":       output,
-		"cacheCreationTokens": cc,
-		"cacheReadTokens":    cr,
-		"totalTokens":        input + output + cc + cr + extra,
-		"totalCost":          cost,
-	}
-}
+
 
 func normalizeDateFast(date string) string {
 	result := ""

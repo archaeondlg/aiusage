@@ -11,6 +11,7 @@ import (
 	"context"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
+	"github.com/archhaeondlg/aiusage/internal/adapter/shared"
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
@@ -73,7 +74,7 @@ func (a *ClaudeAdapter) Summarize(entries []*types.LoadedEntry, kind types.Repor
 // ReportJSON builds the JSON report structure.
 func (a *ClaudeAdapter) ReportJSON(rows []*types.UsageSummary, kind types.ReportKind) (any, error) {
 	report := map[string]any{
-		"totals": totalsFromRows(rows),
+		"totals": shared.TotalsFromRows(rows),
 	}
 	switch kind {
 	case types.ReportDaily:
@@ -166,30 +167,4 @@ func (s *sessionAccumulator) add(entry *types.LoadedEntry) {
 	}
 }
 
-func totalsFromRows(rows []*types.UsageSummary) map[string]any {
-	var input, output, cacheCreate, cacheRead, extra uint64
-	var totalCost, credits float64
-	for _, row := range rows {
-		input += row.InputTokens
-		output += row.OutputTokens
-		cacheCreate += row.CacheCreation
-		cacheRead += row.CacheRead
-		extra += row.ExtraTotal
-		totalCost += row.TotalCost
-		if row.Credits != nil {
-			credits += *row.Credits
-		}
-	}
-	m := map[string]any{
-		"inputTokens":        input,
-		"outputTokens":       output,
-		"cacheCreationTokens": cacheCreate,
-		"cacheReadTokens":    cacheRead,
-		"totalTokens":        input + output + cacheCreate + cacheRead + extra,
-		"totalCost":          totalCost,
-	}
-	if credits > 0 {
-		m["credits"] = credits
-	}
-	return m
-}
+

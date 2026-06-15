@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
+	"github.com/archhaeondlg/aiusage/internal/adapter/shared"
 	"github.com/archhaeondlg/aiusage/internal/dateutil"
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 	"github.com/archhaeondlg/aiusage/internal/summary"
@@ -137,7 +138,7 @@ func (a *CodexAdapter) Summarize(entries []*types.LoadedEntry, kind types.Report
 func (a *CodexAdapter) ReportJSON(rows []*types.UsageSummary, kind types.ReportKind) (any, error) {
 	return map[string]any{
 		string(kind): rows,
-		"totals":     totalsFromRows(rows),
+		"totals":     shared.TotalsFromRows(rows),
 	}, nil
 }
 
@@ -166,22 +167,4 @@ func (a *CodexAdapter) IsAvailable() bool {
 	return false
 }
 
-func totalsFromRows(rows []*types.UsageSummary) map[string]any {
-	var input, output, cc, cr uint64
-	var cost float64
-	for _, r := range rows {
-		input += r.InputTokens
-		output += r.OutputTokens
-		cc += r.CacheCreation
-		cr += r.CacheRead
-		cost += r.TotalCost
-	}
-	return map[string]any{
-		"inputTokens":        input,
-		"outputTokens":       output,
-		"cacheCreationTokens": cc,
-		"cacheReadTokens":    cr,
-		"totalTokens":        input + output + cc + cr,
-		"totalCost":          cost,
-	}
-}
+
