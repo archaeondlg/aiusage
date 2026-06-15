@@ -51,7 +51,7 @@ func LoadEntries(opts loadOptions) ([]*types.LoadedEntry, error) {
 	}
 
 	tz := dateutil.ParseTZ(&opts.Timezone)
-	pricingMap, _ := opts.Pricing.(*pricing.PricingMap)
+	pricingMap := opts.Pricing
 
 	if v >= 1 {
 		fmt.Fprintln(os.Stderr, "→ Parsing usage files...")
@@ -100,7 +100,7 @@ func LoadEntries(opts loadOptions) ([]*types.LoadedEntry, error) {
 func readUsageFilesParallel(
 	files []string,
 	tz *time.Location,
-	pricing *pricing.PricingMap,
+	pricing pricing.PricingProvider,
 	verbose int,
 ) []*types.LoadedFile {
 	workers := runtime.GOMAXPROCS(0)
@@ -200,7 +200,7 @@ func readUsageFilesParallel(
 func readUsageFile(
 	path string,
 	tz *time.Location,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *types.LoadedFile {
 	// Run with timeout — some files cause parseLines to hang forever.
 	type result struct {
@@ -222,7 +222,7 @@ func readUsageFile(
 func readUsageFileInner(
 	path string,
 	tz *time.Location,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *types.LoadedFile {
 	project := ExtractProject(path)
 	sessionID, projectPath := ExtractSessionParts(path)
@@ -242,7 +242,7 @@ func parseLines(
 	data []byte,
 	lf *types.LoadedFile,
 	tz *time.Location,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 	project, sessionID, projectPath string,
 ) {
 	usageMarker := []byte(`"usage":{"`)
@@ -316,7 +316,7 @@ func parseLines(
 	}
 }
 
-func calculateEntryCost(entry *types.UsageEntry, pm *pricing.PricingMap) float64 {
+func calculateEntryCost(entry *types.UsageEntry, pm pricing.PricingProvider) float64 {
 	if pm == nil {
 		return 0
 	}
@@ -334,7 +334,7 @@ func calculateEntryCost(entry *types.UsageEntry, pm *pricing.PricingMap) float64
 	)
 }
 
-func missingPricingModel(entry *types.UsageEntry, pm *pricing.PricingMap) *string {
+func missingPricingModel(entry *types.UsageEntry, pm pricing.PricingProvider) *string {
 	if pm == nil {
 		return nil
 	}
@@ -406,7 +406,7 @@ type chunkResult struct {
 func readUsageFileChunked(
 	path string,
 	tz *time.Location,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 	chunkSize int64,
 	workers int,
 ) *types.LoadedFile {
@@ -465,7 +465,7 @@ func readChunk(
 	path string,
 	cr chunkRange,
 	tz *time.Location,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) chunkResult {
 	result := chunkResult{}
 

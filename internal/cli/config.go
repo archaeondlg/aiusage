@@ -136,7 +136,7 @@ func UpdatePricingFromGitHub() error {
 }
 
 // loadPricingFromConfig reads config.json and extracts the pricing field.
-func loadPricingFromConfig() *pricing.PricingMap {
+func loadPricingFromConfig() pricing.PricingProvider {
 	cfg, err := loadConfigFile()
 	if err != nil {
 		return pricing.LoadDefaultPricing()

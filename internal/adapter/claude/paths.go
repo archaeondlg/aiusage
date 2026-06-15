@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
+	"github.com/archhaeondlg/aiusage/internal/pricing"
 )
 
 // ClaudePaths discovers Claude Code data directories.
@@ -241,7 +242,7 @@ func convertLoadOptions(opts adapter.LoadOptions) loadOptions {
 }
 
 type loadOptions struct {
-	Pricing       interface{}
+	Pricing       pricing.PricingProvider
 	Timezone      string
 	Since         string
 	Until         string

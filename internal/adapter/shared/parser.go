@@ -10,7 +10,7 @@ import (
 
 // ParseGenericEntry parses a JSONL line into a LoadedEntry using the common
 // Claude Code / coding agent format.
-func ParseGenericEntry(line []byte, pm *pricing.PricingMap) *types.LoadedEntry {
+func ParseGenericEntry(line []byte, pm pricing.PricingProvider) *types.LoadedEntry {
 	// Skip lines without usage data.
 	if len(line) < 20 {
 		return nil

@@ -49,7 +49,7 @@ func messageToEntry(
 	value json.RawMessage,
 	id, sessionID string,
 	tz interface{},
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *types.LoadedEntry {
 	var msg opencodeMessage
 	if json.Unmarshal(value, &msg) == nil {
@@ -67,7 +67,7 @@ func messageToEntryParsed(
 	msg *opencodeMessage,
 	id, sessionID string,
 	tz interface{},
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *types.LoadedEntry {
 	if msg.Tokens == nil {
 		return nil
@@ -161,7 +161,7 @@ func messageToEntryRaw(
 	raw map[string]json.RawMessage,
 	id, sessionID string,
 	tz interface{},
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *types.LoadedEntry {
 	// Re-marshal and parse normally.
 	data, err := json.Marshal(raw)
@@ -183,7 +183,7 @@ func calculateOpenCodeCost(
 	model, provider string,
 	usage types.TokenUsageRaw,
 	costUSD float64,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) float64 {
 	if costUSD > 0 {
 		return costUSD
@@ -211,7 +211,7 @@ func missingOpenCodePricing(
 	model, provider string,
 	usage types.TokenUsageRaw,
 	costUSD float64,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *string {
 	if costUSD > 0 || pm == nil {
 		return nil

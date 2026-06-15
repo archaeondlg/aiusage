@@ -15,7 +15,7 @@ import (
 // loadEntries discovers and parses all OpenCode usage data.
 // Equivalent to Rust load_entries().
 func loadEntries(
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 	timezone string,
 ) ([]*types.LoadedEntry, error) {
 	dirs, err := paths()
@@ -56,7 +56,7 @@ func loadEntries(
 // loadEntriesFromDirectory loads entries from one OpenCode data directory.
 func loadEntriesFromDirectory(
 	opencodeDir string,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) ([]*types.LoadedEntry, error) {
 	var entries []*types.LoadedEntry
 	seen := make(map[string]bool)
@@ -109,7 +109,7 @@ func loadEntriesFromDirectory(
 // loadEntriesFromDatabase reads OpenCode SQLite database.
 func loadEntriesFromDatabase(
 	dbPath string,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) []*types.LoadedEntry {
 	db, err := sql.Open("sqlite", dbPath+"?mode=ro")
 	if err != nil {
@@ -144,7 +144,7 @@ func loadEntriesFromDatabase(
 // readMessageFile reads a single JSON message file.
 func readMessageFile(
 	path string,
-	pm *pricing.PricingMap,
+	pm pricing.PricingProvider,
 ) *types.LoadedEntry {
 	data, err := os.ReadFile(path)
 	if err != nil {

@@ -34,6 +34,11 @@ func EmptyPricing() Pricing {
 // PricingMap - the central pricing registry
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+// PricingProvider abstracts model pricing lookup.
+type PricingProvider interface {
+	Find(model string) *Pricing
+}
+
 // PricingMap holds all known model pricing and context limits.
 type PricingMap struct {
 	entries       map[string]Pricing
@@ -144,7 +149,7 @@ func TieredCost(tokens uint64, rate float64, above200k *float64) float64 {
 func CalculateCost(
 	inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens uint64,
 	model string,
-	pricing *PricingMap,
+	pricing PricingProvider,
 ) float64 {
 	if pricing == nil {
 		return 0

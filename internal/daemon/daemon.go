@@ -138,7 +138,7 @@ func Run(ctx context.Context, opts DaemonOptions) error {
 func pollAndPrint(
 	ctx context.Context,
 	agents []agentEntry,
-	pricingMap *pricing.PricingMap,
+	pricingMap pricing.PricingProvider,
 	style output.Style,
 	opts DaemonOptions,
 ) error {

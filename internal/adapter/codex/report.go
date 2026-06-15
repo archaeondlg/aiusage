@@ -15,7 +15,7 @@ import (
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // ReportFromGroups builds a JSON report from aggregated groups.
-func ReportFromGroups(groups map[string]*codexGroupData, kind types.ReportKind, pricing *pricing.PricingMap, speed string) map[string]any {
+func ReportFromGroups(groups map[string]*codexGroupData, kind types.ReportKind, pricing pricing.PricingProvider, speed string) map[string]any {
 	var rows []map[string]any
 	for _, key := range sortedGroupKeys(groups) {
 		group := groups[key]
@@ -53,7 +53,7 @@ func periodKey(kind types.ReportKind) string {
 	}
 }
 
-func groupJSON(period string, group *codexGroupData, kind types.ReportKind, pm *pricing.PricingMap, speed string) map[string]any {
+func groupJSON(period string, group *codexGroupData, kind types.ReportKind, pm pricing.PricingProvider, speed string) map[string]any {
 	cost := calculateGroupCost(group, pm, speed)
 	input := nonCachedInput(group.InputTokens, group.CachedInputTokens)
 
@@ -96,7 +96,7 @@ func nonCachedInput(input, cached uint64) uint64 {
 	return 0
 }
 
-func totalsJSON(groups map[string]*codexGroupData, pm *pricing.PricingMap, speed string) map[string]any {
+func totalsJSON(groups map[string]*codexGroupData, pm pricing.PricingProvider, speed string) map[string]any {
 	var input, cached, output, reasoning, total uint64
 	var cost float64
 	for _, g := range groups {
@@ -123,7 +123,7 @@ func totalsJSON(groups map[string]*codexGroupData, pm *pricing.PricingMap, speed
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // CalculateCodexModelCost computes the USD cost for a Codex model's usage.
-func CalculateCodexModelCost(model string, usage *codexModelUsageData, pm *pricing.PricingMap, speed string) float64 {
+func CalculateCodexModelCost(model string, usage *codexModelUsageData, pm pricing.PricingProvider, speed string) float64 {
 	p := pm.Find(model)
 	if p == nil {
 		return 0
@@ -149,7 +149,7 @@ func CalculateCodexModelCost(model string, usage *codexModelUsageData, pm *prici
 		float64(usage.OutputTokens)*p.Output) * multiplier
 }
 
-func calculateGroupCost(group *codexGroupData, pm *pricing.PricingMap, speed string) float64 {
+func calculateGroupCost(group *codexGroupData, pm pricing.PricingProvider, speed string) float64 {
 	var cost float64
 	for model, usage := range group.Models {
 		cs := string(CodexSpeedStandard)
@@ -163,7 +163,7 @@ func calculateGroupCost(group *codexGroupData, pm *pricing.PricingMap, speed str
 
 
 // MissingPricingModels returns models without pricing data.
-func MissingPricingModels(groups map[string]*codexGroupData, pm *pricing.PricingMap) []string {
+func MissingPricingModels(groups map[string]*codexGroupData, pm pricing.PricingProvider) []string {
 	seen := make(map[string]bool)
 	for _, g := range groups {
 		for model := range g.Models {
@@ -185,7 +185,7 @@ func MissingPricingModels(groups map[string]*codexGroupData, pm *pricing.Pricing
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // PrintCodexTable prints a terminal table from aggregated groups.
-func PrintCodexTable(groups map[string]*codexGroupData, kind types.ReportKind, pm *pricing.PricingMap, speed string, compact bool) {
+func PrintCodexTable(groups map[string]*codexGroupData, kind types.ReportKind, pm pricing.PricingProvider, speed string, compact bool) {
 	if len(groups) == 0 {
 		fmt.Println("No Codex usage data found.")
 		return

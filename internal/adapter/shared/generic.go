@@ -108,7 +108,7 @@ func TotalsFromRows(rows []*types.UsageSummary) map[string]any {
 	}
 }
 
-func parseJSONLFile(path string, pm *pricing.PricingMap) []*types.LoadedEntry {
+func parseJSONLFile(path string, pm pricing.PricingProvider) []*types.LoadedEntry {
 	var entries []*types.LoadedEntry
 	_ = ReadJSONLLines(path, func(line []byte) error {
 		entry := ParseGenericEntry(line, pm)

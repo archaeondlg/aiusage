@@ -10,7 +10,7 @@ import (
 
 // LoadOptions configures how an adapter loads and processes usage data.
 type LoadOptions struct {
-	Pricing       *pricing.PricingMap
+	Pricing       pricing.PricingProvider
 	Timezone      string
 	Since         string
 	Until         string
