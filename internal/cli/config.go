@@ -13,14 +13,30 @@ import (
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 )
 
+// validateConfigSchema logs warnings for unexpected config structure.
+func validateConfigSchema(data []byte) {
+	var cfg Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		slog.Warn("config.json schema validation", "error", err)
+	}
+	// Check for top-level pricing field (expected by loadPricingFromConfig).
+	var raw map[string]any
+	if json.Unmarshal(data, &raw) == nil {
+		if _, ok := raw["pricing"]; !ok {
+			slog.Warn("config.json missing top-level 'pricing' field")
+		}
+	}
+}
+
 var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 const configURL = "https://raw.githubusercontent.com/archaeondlg/aiusage/master/config.json"
 
 // Config represents the full config.json configuration file.
 type Config struct {
-	Defaults  ConfigDefaults            `json:"defaults"`
-	Commands  map[string]CommandConfig  `json:"commands"`
+	Defaults  ConfigDefaults                   `json:"defaults"`
+	Commands  map[string]CommandConfig         `json:"commands"`
+	Pricing   map[string]pricing.PricingEntry  `json:"pricing"`
 }
 
 // ConfigDefaults holds default values for all commands.
@@ -60,6 +76,7 @@ func configPath() string {
 func loadConfigFile() (map[string]any, error) {
 	data, err := os.ReadFile(configPath())
 	if err == nil {
+		validateConfigSchema(data)
 		var cfg map[string]any
 		if err := json.Unmarshal(data, &cfg); err == nil {
 			return cfg, nil
