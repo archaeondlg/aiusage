@@ -8,7 +8,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -309,8 +311,13 @@ func printJSONCycle(entries []*types.LoadedEntry, now time.Time) error {
 }
 
 func clearScreen() {
-	fmt.Print("\033[2J")
-	fmt.Print("\033[H")
+	if runtime.GOOS == "windows" {
+		cmd := exec.Command("cmd", "/c", "cls")
+		cmd.Stdout = os.Stdout
+		_ = cmd.Run()
+	} else {
+		fmt.Print("\033[2J\033[H")
+	}
 }
 
 func formatDuration(d time.Duration) string {
