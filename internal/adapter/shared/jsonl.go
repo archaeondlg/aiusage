@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,7 @@ func FindJSONLFiles(paths []string) []string {
 	for _, root := range paths {
 		filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
+				slog.Warn("walk error", "path", path, "err", err)
 				return nil
 			}
 			if !d.IsDir() && strings.HasSuffix(d.Name(), ".jsonl") {
