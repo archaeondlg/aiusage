@@ -146,12 +146,12 @@ func GroupProjectOutput(rows []*types.UsageSummary) map[string][]map[string]any 
 	return projects
 }
 
-// jsonFloat formats a float64 for JSON: whole numbers become integers.
+// jsonFloat truncates a float64 to 9 decimal places, avoiding integer overflow risk.
 func jsonFloat(value float64) any {
-	if value == math.Trunc(value) && !math.IsInf(value, 0) && math.Abs(value) <= 1<<53 {
-		return int64(value)
+	if value == 0 || math.IsNaN(value) || math.IsInf(value, 0) {
+		return 0.0
 	}
-	return value
+	return math.Trunc(value*1e9) / 1e9
 }
 
 // stripCostJSON recursively removes cost fields from a value.

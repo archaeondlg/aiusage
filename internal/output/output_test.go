@@ -124,9 +124,11 @@ func TestTotalsJSON(t *testing.T) {
 }
 
 func TestJSONFloat(t *testing.T) {
-	assert.Equal(t, int64(42), jsonFloat(42.0))
-	assert.Equal(t, int64(0), jsonFloat(0.0))
+	assert.Equal(t, 42.0, jsonFloat(42.0))
+	assert.Equal(t, 0.0, jsonFloat(0.0))
 	assert.Equal(t, 0.25, jsonFloat(0.25))
+	assert.Equal(t, 42.123456789, jsonFloat(42.123456789))
+	assert.Equal(t, 42.123456789, jsonFloat(42.1234567891)) // truncated to 9 decimals
 }
 
 func countLines(s string) int {
