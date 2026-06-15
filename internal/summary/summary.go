@@ -45,6 +45,7 @@ func SummarizeByKey(
 type UsageAccumulator struct {
 	Counts        types.TokenCounts
 	Cost          float64
+	ReasoningOutputTokens uint64
 	Credits       *float64
 	MessageCount  *uint64
 	Models        []string
@@ -58,6 +59,7 @@ func (a *UsageAccumulator) AddEntry(entry *types.LoadedEntry) {
 	a.Counts.AddUsage(usage)
 	a.Counts.ExtraTotalTokens += entry.ExtraTotalTokens
 	a.Cost += entry.Cost
+	a.ReasoningOutputTokens += entry.ReasoningOutputTokens
 
 	if entry.Credits != nil {
 		if a.Credits == nil {
@@ -86,6 +88,7 @@ func (a *UsageAccumulator) AddEntry(entry *types.LoadedEntry) {
 		bd := &a.Breakdowns[idx]
 		bd.InputTokens += usage.InputTokens
 		bd.OutputTokens += usage.OutputTokens
+		bd.ReasoningOutputTokens += entry.ReasoningOutputTokens
 		bd.CacheCreation += usage.CacheCreationTokenCount()
 		bd.CacheRead += usage.CacheReadInputTokens
 		bd.ExtraTotalTokens += entry.ExtraTotalTokens
@@ -102,16 +105,17 @@ func (a *UsageAccumulator) IntoSummary() *types.UsageSummary {
 		return a.Breakdowns[i].Cost > a.Breakdowns[j].Cost
 	})
 	return &types.UsageSummary{
-		InputTokens:     a.Counts.InputTokens,
-		OutputTokens:    a.Counts.OutputTokens,
-		CacheCreation:   a.Counts.CacheCreation,
-		CacheRead:       a.Counts.CacheRead,
-		ExtraTotal:      a.Counts.ExtraTotalTokens,
-		TotalCost:       a.Cost,
-		Credits:         a.Credits,
-		MessageCount:    a.MessageCount,
-		ModelsUsed:      a.Models,
-		ModelBreakdowns: a.Breakdowns,
+		InputTokens:           a.Counts.InputTokens,
+		OutputTokens:          a.Counts.OutputTokens,
+		ReasoningOutputTokens: a.ReasoningOutputTokens,
+		CacheCreation:         a.Counts.CacheCreation,
+		CacheRead:             a.Counts.CacheRead,
+		ExtraTotal:            a.Counts.ExtraTotalTokens,
+		TotalCost:             a.Cost,
+		Credits:               a.Credits,
+		MessageCount:          a.MessageCount,
+		ModelsUsed:            a.Models,
+		ModelBreakdowns:       a.Breakdowns,
 	}
 }
 
@@ -226,6 +230,7 @@ func AggregateSummaries(rows []*types.UsageSummary) *types.UsageSummary {
 	for _, row := range rows {
 		s.InputTokens += row.InputTokens
 		s.OutputTokens += row.OutputTokens
+		s.ReasoningOutputTokens += row.ReasoningOutputTokens
 		s.CacheCreation += row.CacheCreation
 		s.CacheRead += row.CacheRead
 		s.ExtraTotal += row.ExtraTotal
@@ -260,6 +265,7 @@ func AggregateSummaries(rows []*types.UsageSummary) *types.UsageSummary {
 			bd := &s.ModelBreakdowns[idx]
 			bd.InputTokens += item.InputTokens
 			bd.OutputTokens += item.OutputTokens
+			bd.ReasoningOutputTokens += item.ReasoningOutputTokens
 			bd.CacheCreation += item.CacheCreation
 			bd.CacheRead += item.CacheRead
 			bd.Cost += item.Cost

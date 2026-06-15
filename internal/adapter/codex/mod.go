@@ -17,7 +17,6 @@ import (
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
 	"github.com/archhaeondlg/aiusage/internal/dateutil"
-	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
@@ -64,11 +63,12 @@ func (a *CodexAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptions
 						Model: &model,
 					},
 				},
-				Date:        key,
-				Project:     "codex",
-				SessionID:   key,
-				ProjectPath: "Codex",
-				Model:       &model,
+				Date:                 key,
+				Project:              "codex",
+				SessionID:            key,
+				ProjectPath:          "Codex",
+				Model:                &model,
+				ReasoningOutputTokens: usage.ReasoningOutputTokens,
 			}
 
 			if ts, err := dateutil.ParseTimestamp(g.LastActivity); err == nil {
@@ -88,12 +88,14 @@ func (a *CodexAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptions
 	// Date filter.
 	if opts.Since != "" || opts.Until != "" {
 		var filtered []*types.LoadedEntry
+		since := dateutil.NormalizeDateBound(opts.Since)
+		until := dateutil.NormalizeDateBound(opts.Until)
 		for _, e := range entries {
 			date := dateutil.NormalizeDateBound(e.Date)
-			if opts.Since != "" && date < opts.Since {
+			if since != "" && date < since {
 				continue
 			}
-			if opts.Until != "" && date > opts.Until {
+			if until != "" && date > until {
 				continue
 			}
 			filtered = append(filtered, e)
@@ -163,31 +165,6 @@ func (a *CodexAdapter) IsAvailable() bool {
 	}
 	return false
 }
-
-// Run executes a full Codex report.
-func Run(opts adapter.LoadOptions, kind types.ReportKind) error {
-	pm := opts.Pricing
-	if pm == nil {
-		pm = pricing.LoadDefaultPricing()
-	}
-	singleThread := opts.SingleThread
-
-	groups, err := LoadGroups(singleThread)
-	if err != nil {
-		return err
-	}
-
-	speed := string(ResolveCodexSpeed(CodexSpeedAuto))
-
-	if opts.JSON {
-		report := ReportFromGroups(groups, kind, pm, speed)
-		return output.PrintJSONOrJQ(report, "", false)
-	}
-
-	PrintCodexTable(groups, kind, pm, speed, false)
-	return nil
-}
-
 
 func totalsFromRows(rows []*types.UsageSummary) map[string]any {
 	var input, output, cc, cr uint64

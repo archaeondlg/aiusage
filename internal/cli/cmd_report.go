@@ -9,8 +9,6 @@ import (
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
 	_ "github.com/archhaeondlg/aiusage/internal/adapter/all"
-	"github.com/archhaeondlg/aiusage/internal/adapter/codex"
-	"github.com/archhaeondlg/aiusage/internal/adapter/opencode"
 	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
@@ -42,12 +40,6 @@ func runAgentReport(cmd *cobra.Command, agent, kind string) error {
 	}
 	if agent == "all" {
 		return runAllAgents(cmd, buildALO())
-	}
-	if agent == "codex" {
-		return codex.Run(buildALO(), reportKindFromString(kind))
-	}
-	if agent == "opencode" {
-		return opencode.Run(buildALO(), reportKindFromString(kind))
 	}
 
 	adp, ok := adapter.GetAdapter(agent)
@@ -121,12 +113,12 @@ func runAgentReport(cmd *cobra.Command, agent, kind string) error {
 		return output.PrintJSONOrJQ(report, opts.JQ, false)
 	}
 
-	printUsageTable(kind, rows, opts)
+	printUsageTable(agent, kind, rows, opts)
 	return nil
 }
 
-// printUsageTable renders the terminal table output.
-func printUsageTable(kind string, rows []*types.UsageSummary, opts *RunOptions) {
+// printUsageTable renders the terminal table output for a given agent.
+func printUsageTable(agent, kind string, rows []*types.UsageSummary, opts *RunOptions) {
 	if len(rows) == 0 {
 		fmt.Println("No usage data found.")
 		return
@@ -145,7 +137,8 @@ func printUsageTable(kind string, rows []*types.UsageSummary, opts *RunOptions) 
 	noColor := opts.NoColor || opts.Color == "never"
 	style := output.Style{Enabled: !noColor, NoColor: noColor}
 
-	output.PrintBoxTitle("Claude Code Token Usage Report", style)
+	title := titleForAgent(agent)
+	output.PrintBoxTitle(title, style)
 
 	compact := opts.Compact
 
@@ -155,11 +148,24 @@ func printUsageTable(kind string, rows []*types.UsageSummary, opts *RunOptions) 
 		headers = []string{firstCol, "Models", "Input", "Output", "Cost (USD)"}
 		aligns = []output.Align{output.AlignLeft, output.AlignLeft, output.AlignRight, output.AlignRight, output.AlignRight}
 	} else {
-		headers = []string{firstCol, "Models", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"}
-		aligns = []output.Align{output.AlignLeft, output.AlignLeft, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight}
+		hasReasoning := false
+		for _, row := range rows {
+			if row.ReasoningOutputTokens > 0 {
+				hasReasoning = true
+				break
+			}
+		}
+		if hasReasoning {
+			headers = []string{firstCol, "Models", "Input", "Output", "Reasoning", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"}
+			aligns = []output.Align{output.AlignLeft, output.AlignLeft, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight}
+		} else {
+			headers = []string{firstCol, "Models", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"}
+			aligns = []output.Align{output.AlignLeft, output.AlignLeft, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight, output.AlignRight}
+		}
 	}
 
 	t := output.NewTable(headers, aligns, style)
+	hasReasoning := len(headers) > 8
 
 	for _, row := range rows {
 		label := ""
@@ -178,6 +184,8 @@ func printUsageTable(kind string, rows []*types.UsageSummary, opts *RunOptions) 
 
 		if compact {
 			t.Push([]string{label, models, output.FormatNumber(row.InputTokens), output.FormatNumber(row.OutputTokens), output.FormatCurrency(row.TotalCost)})
+		} else if hasReasoning {
+			t.Push([]string{label, models, output.FormatNumber(row.InputTokens), output.FormatNumber(row.OutputTokens), output.FormatNumber(row.ReasoningOutputTokens), output.FormatNumber(row.CacheCreation), output.FormatNumber(row.CacheRead), output.FormatNumber(row.TotalTokens()), output.FormatCurrency(row.TotalCost)})
 		} else {
 			t.Push([]string{label, models, output.FormatNumber(row.InputTokens), output.FormatNumber(row.OutputTokens), output.FormatNumber(row.CacheCreation), output.FormatNumber(row.CacheRead), output.FormatNumber(row.TotalTokens()), output.FormatCurrency(row.TotalCost)})
 		}
@@ -199,6 +207,8 @@ func printUsageTable(kind string, rows []*types.UsageSummary, opts *RunOptions) 
 	t.Separator()
 	if compact {
 		t.Push([]string{"", style.Colorize("Total", output.ColorYellow), style.Colorize(output.FormatNumber(ti), output.ColorYellow), style.Colorize(output.FormatNumber(to), output.ColorYellow), style.Colorize(output.FormatCurrency(tco), output.ColorYellow)})
+	} else if hasReasoning {
+		t.Push([]string{style.Colorize("Total", output.ColorYellow), "", style.Colorize(output.FormatNumber(ti), output.ColorYellow), style.Colorize(output.FormatNumber(to), output.ColorYellow), style.Colorize(output.FormatNumber(0), output.ColorYellow), style.Colorize(output.FormatNumber(tc), output.ColorYellow), style.Colorize(output.FormatNumber(tr), output.ColorYellow), style.Colorize(output.FormatNumber(tt), output.ColorYellow), style.Colorize(output.FormatCurrency(tco), output.ColorYellow)})
 	} else {
 		t.Push([]string{style.Colorize("Total", output.ColorYellow), "", style.Colorize(output.FormatNumber(ti), output.ColorYellow), style.Colorize(output.FormatNumber(to), output.ColorYellow), style.Colorize(output.FormatNumber(tc), output.ColorYellow), style.Colorize(output.FormatNumber(tr), output.ColorYellow), style.Colorize(output.FormatNumber(tt), output.ColorYellow), style.Colorize(output.FormatCurrency(tco), output.ColorYellow)})
 	}
@@ -206,5 +216,18 @@ func printUsageTable(kind string, rows []*types.UsageSummary, opts *RunOptions) 
 
 	for _, w := range summary.MissingPricingWarnings(rows) {
 		fmt.Fprintln(os.Stderr, w)
+	}
+}
+
+func titleForAgent(agent string) string {
+	switch agent {
+	case "codex":
+		return "Codex Token Usage Report"
+	case "opencode":
+		return "OpenCode Token Usage Report"
+	case "claude":
+		return "Claude Code Token Usage Report"
+	default:
+		return agent + " Token Usage Report"
 	}
 }

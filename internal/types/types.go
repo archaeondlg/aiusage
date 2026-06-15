@@ -63,19 +63,20 @@ const (
 
 // LoadedEntry is a fully enriched usage entry after parsing.
 type LoadedEntry struct {
-	Data                UsageEntry
-	Timestamp           time.Time
-	Date                string
-	Project             string
-	SessionID           string
-	ProjectPath         string
-	Cost                float64
-	ExtraTotalTokens    uint64
-	Credits             *float64
-	MessageCount        *uint64
-	Model               *string
-	UsageLimitResetTime *time.Time
-	MissingPricingModel *string
+	Data                 UsageEntry
+	Timestamp            time.Time
+	Date                 string
+	Project              string
+	SessionID            string
+	ProjectPath          string
+	Cost                 float64
+	ExtraTotalTokens     uint64
+	ReasoningOutputTokens uint64
+	Credits              *float64
+	MessageCount         *uint64
+	Model                *string
+	UsageLimitResetTime  *time.Time
+	MissingPricingModel  *string
 }
 
 // LoadedFile holds all entries from a single JSONL file.
@@ -119,6 +120,7 @@ type ModelBreakdown struct {
 	ModelName         string  `json:"modelName"`
 	InputTokens       uint64  `json:"inputTokens"`
 	OutputTokens      uint64  `json:"outputTokens"`
+	ReasoningOutputTokens uint64 `json:"reasoningOutputTokens,omitempty"`
 	CacheCreation     uint64  `json:"cacheCreationTokens"`
 	CacheRead         uint64  `json:"cacheReadTokens"`
 	ExtraTotalTokens  uint64  `json:"-"`
@@ -132,30 +134,31 @@ type ModelBreakdown struct {
 
 // UsageSummary is a single row in the final report output.
 type UsageSummary struct {
-	Date            *string          `json:"date,omitempty"`
-	Month           *string          `json:"month,omitempty"`
-	Week            *string          `json:"week,omitempty"`
-	SessionID       *string          `json:"sessionId,omitempty"`
-	ProjectPath     *string          `json:"projectPath,omitempty"`
-	LastActivity    *string          `json:"lastActivity,omitempty"`
-	FirstActivity   *string          `json:"firstActivity,omitempty"`
-	InputTokens     uint64           `json:"inputTokens"`
-	OutputTokens    uint64           `json:"outputTokens"`
-	CacheCreation   uint64           `json:"cacheCreationTokens"`
-	CacheRead       uint64           `json:"cacheReadTokens"`
-	ExtraTotal      uint64           `json:"-"`
-	TotalCost       float64          `json:"totalCost"`
-	Credits         *float64         `json:"credits,omitempty"`
-	MessageCount    *uint64          `json:"messageCount,omitempty"`
-	ModelsUsed      []string         `json:"modelsUsed"`
-	ModelBreakdowns []ModelBreakdown `json:"modelBreakdowns"`
-	Project         *string          `json:"project,omitempty"`
-	Versions        []string         `json:"versions,omitempty"`
+	Date                 *string          `json:"date,omitempty"`
+	Month                *string          `json:"month,omitempty"`
+	Week                 *string          `json:"week,omitempty"`
+	SessionID            *string          `json:"sessionId,omitempty"`
+	ProjectPath          *string          `json:"projectPath,omitempty"`
+	LastActivity         *string          `json:"lastActivity,omitempty"`
+	FirstActivity        *string          `json:"firstActivity,omitempty"`
+	InputTokens          uint64           `json:"inputTokens"`
+	OutputTokens         uint64           `json:"outputTokens"`
+	ReasoningOutputTokens uint64          `json:"reasoningOutputTokens,omitempty"`
+	CacheCreation        uint64           `json:"cacheCreationTokens"`
+	CacheRead            uint64           `json:"cacheReadTokens"`
+	ExtraTotal           uint64           `json:"-"`
+	TotalCost            float64          `json:"totalCost"`
+	Credits              *float64         `json:"credits,omitempty"`
+	MessageCount         *uint64          `json:"messageCount,omitempty"`
+	ModelsUsed           []string         `json:"modelsUsed"`
+	ModelBreakdowns      []ModelBreakdown `json:"modelBreakdowns"`
+	Project              *string          `json:"project,omitempty"`
+	Versions             []string         `json:"versions,omitempty"`
 }
 
 // TotalTokens returns the sum of all token fields in the summary.
 func (s UsageSummary) TotalTokens() uint64 {
-	return s.InputTokens + s.OutputTokens + s.CacheCreation + s.CacheRead + s.ExtraTotal
+	return s.InputTokens + s.OutputTokens + s.ReasoningOutputTokens + s.CacheCreation + s.CacheRead + s.ExtraTotal
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
