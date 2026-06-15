@@ -4,6 +4,7 @@ package output
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode/utf8"
 )
@@ -384,14 +385,7 @@ func FormatModelsMultiline(models []string) string {
 			unique = append(unique, short)
 		}
 	}
-	// Sort alphabetically.
-	for i := 0; i < len(unique); i++ {
-		for j := i + 1; j < len(unique); j++ {
-			if unique[i] > unique[j] {
-				unique[i], unique[j] = unique[j], unique[i]
-			}
-		}
-	}
+	sort.Strings(unique)
 	var parts []string
 	for _, m := range unique {
 		parts = append(parts, "- "+m)
