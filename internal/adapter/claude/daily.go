@@ -1,8 +1,7 @@
 package claude
 
 import (
-	"sort"
-
+	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
 )
 
@@ -64,102 +63,28 @@ func summarizeByKey(
 	keyFn func(*types.LoadedEntry) string,
 	metaFn func(string) (string, *string),
 ) []*types.UsageSummary {
-	groups := make(map[string]*usageAccumulator)
+	groups := make(map[string]*summary.UsageAccumulator)
 	var groupOrder []string
 
 	for _, entry := range entries {
 		key := keyFn(entry)
 		if _, ok := groups[key]; !ok {
-			groups[key] = &usageAccumulator{
-				breakdownIdxs: make(map[string]int),
+			groups[key] = &summary.UsageAccumulator{
+				BreakdownIdxs: make(map[string]int),
 			}
 			groupOrder = append(groupOrder, key)
 		}
-		groups[key].addEntry(entry)
+		groups[key].AddEntry(entry)
 	}
 
 	var rows []*types.UsageSummary
 	for _, key := range groupOrder {
 		group := groups[key]
 		date, project := metaFn(key)
-		summary := group.intoSummary()
-		summary.Date = &date
-		summary.Project = project
-		rows = append(rows, summary)
+		row := group.IntoSummary()
+		row.Date = &date
+		row.Project = project
+		rows = append(rows, row)
 	}
 	return rows
-}
-
-// usageAccumulator mirrors Rust UsageAccumulator.
-type usageAccumulator struct {
-	counts         types.TokenCounts
-	cost           float64
-	credits        *float64
-	messageCount   *uint64
-	models         []string
-	breakdowns     []types.ModelBreakdown
-	breakdownIdxs  map[string]int
-}
-
-func (a *usageAccumulator) addEntry(entry *types.LoadedEntry) {
-	usage := entry.Data.Message.Usage
-	a.counts.AddUsage(usage)
-	a.counts.ExtraTotalTokens += entry.ExtraTotalTokens
-	a.cost += entry.Cost
-
-	if entry.Credits != nil {
-		if a.credits == nil {
-			a.credits = new(float64)
-		}
-		*a.credits += *entry.Credits
-	}
-	if entry.MessageCount != nil {
-		if a.messageCount == nil {
-			a.messageCount = new(uint64)
-		}
-		*a.messageCount += *entry.MessageCount
-	}
-
-	if entry.Model != nil {
-		model := *entry.Model
-		idx, ok := a.breakdownIdxs[model]
-		if !ok {
-			idx = len(a.breakdowns)
-			a.breakdownIdxs[model] = idx
-			a.models = append(a.models, model)
-			a.breakdowns = append(a.breakdowns, types.ModelBreakdown{
-				ModelName: model,
-			})
-		}
-		bd := &a.breakdowns[idx]
-		bd.InputTokens += usage.InputTokens
-		bd.OutputTokens += usage.OutputTokens
-		bd.CacheCreation += usage.CacheCreationTokenCount()
-		bd.CacheRead += usage.CacheReadInputTokens
-		bd.ExtraTotalTokens += entry.ExtraTotalTokens
-		bd.Cost += entry.Cost
-		if entry.MissingPricingModel != nil {
-			bd.MissingPricing = true
-		}
-	}
-}
-
-func (a *usageAccumulator) intoSummary() *types.UsageSummary {
-	// Sort breakdowns by cost descending.
-	sort.SliceStable(a.breakdowns, func(i, j int) bool {
-		return a.breakdowns[i].Cost > a.breakdowns[j].Cost
-	})
-
-	return &types.UsageSummary{
-		InputTokens:     a.counts.InputTokens,
-		OutputTokens:    a.counts.OutputTokens,
-		CacheCreation:   a.counts.CacheCreation,
-		CacheRead:       a.counts.CacheRead,
-		ExtraTotal:      a.counts.ExtraTotalTokens,
-		TotalCost:       a.cost,
-		Credits:         a.credits,
-		MessageCount:    a.messageCount,
-		ModelsUsed:      a.models,
-		ModelBreakdowns: a.breakdowns,
-	}
 }

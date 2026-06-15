@@ -12,6 +12,7 @@ import (
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
 	"github.com/archhaeondlg/aiusage/internal/pricing"
+	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
 )
 
@@ -111,8 +112,8 @@ func sessionSummaries(entries []*types.LoadedEntry) []*types.UsageSummary {
 		sid := entry.SessionID
 		if _, ok := groups[sid]; !ok {
 			groups[sid] = &sessionAccumulator{
-				accum: usageAccumulator{
-					breakdownIdxs: make(map[string]int),
+				accum: summary.UsageAccumulator{
+					BreakdownIdxs: make(map[string]int),
 				},
 			}
 			order = append(order, sid)
@@ -123,7 +124,7 @@ func sessionSummaries(entries []*types.LoadedEntry) []*types.UsageSummary {
 	var rows []*types.UsageSummary
 	for _, sid := range order {
 		s := groups[sid]
-		row := s.accum.intoSummary()
+		row := s.accum.IntoSummary()
 		row.SessionID = &sid
 		row.LastActivity = &s.lastActivity
 		if s.firstActivity != "" {
@@ -139,7 +140,7 @@ func sessionSummaries(entries []*types.LoadedEntry) []*types.UsageSummary {
 }
 
 type sessionAccumulator struct {
-	accum         usageAccumulator
+	accum         summary.UsageAccumulator
 	lastActivity  string
 	firstActivity  string
 	projectPath   string
@@ -148,7 +149,7 @@ type sessionAccumulator struct {
 }
 
 func (s *sessionAccumulator) add(entry *types.LoadedEntry) {
-	s.accum.addEntry(entry)
+	s.accum.AddEntry(entry)
 	s.lastActivity = entry.Timestamp.Format("2006-01-02T15:04:05.000Z")
 	if s.firstActivity == "" || entry.Timestamp.Format("2006-01-02T15:04:05.000Z") < s.firstActivity {
 		s.firstActivity = entry.Timestamp.Format("2006-01-02T15:04:05.000Z")

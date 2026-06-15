@@ -19,6 +19,7 @@ import (
 	"github.com/archhaeondlg/aiusage/internal/dateutil"
 	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/pricing"
+	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
 )
 
@@ -104,7 +105,7 @@ func (a *CodexAdapter) LoadEntries(ctx context.Context, opts adapter.LoadOptions
 }
 
 func (a *CodexAdapter) Summarize(entries []*types.LoadedEntry, kind types.ReportKind) ([]*types.UsageSummary, error) {
-	groups := make(map[string]*summaryAccumulator)
+	groups := make(map[string]*summary.UsageAccumulator)
 	var order []string
 	for _, e := range entries {
 		key := e.Date
@@ -112,14 +113,14 @@ func (a *CodexAdapter) Summarize(entries []*types.LoadedEntry, kind types.Report
 			key = e.SessionID
 		}
 		if _, ok := groups[key]; !ok {
-			groups[key] = &summaryAccumulator{breakdownIdx: make(map[string]int)}
+			groups[key] = &summary.UsageAccumulator{BreakdownIdxs: make(map[string]int)}
 			order = append(order, key)
 		}
-		groups[key].add(e)
+		groups[key].AddEntry(e)
 	}
 	var rows []*types.UsageSummary
 	for _, key := range order {
-		s := groups[key].into()
+		s := groups[key].IntoSummary()
 		d := key
 		if kind == types.ReportSession {
 			s.SessionID = &d
@@ -187,53 +188,6 @@ func Run(opts adapter.LoadOptions, kind types.ReportKind) error {
 	return nil
 }
 
-type summaryAccumulator struct {
-	tokens       types.TokenCounts
-	cost         float64
-	models       []string
-	breakdowns   []types.ModelBreakdown
-	breakdownIdx map[string]int
-}
-
-func (a *summaryAccumulator) add(e *types.LoadedEntry) {
-	u := e.Data.Message.Usage
-	a.tokens.AddUsage(u)
-	a.cost += e.Cost
-	if e.Model != nil {
-		idx, ok := a.breakdownIdx[*e.Model]
-		if !ok {
-			idx = len(a.breakdowns)
-			a.breakdownIdx[*e.Model] = idx
-			a.models = append(a.models, *e.Model)
-			a.breakdowns = append(a.breakdowns, types.ModelBreakdown{ModelName: *e.Model})
-		}
-		bd := &a.breakdowns[idx]
-		bd.InputTokens += u.InputTokens
-		bd.OutputTokens += u.OutputTokens
-		bd.CacheCreation += u.CacheCreationTokenCount()
-		bd.CacheRead += u.CacheReadInputTokens
-		bd.Cost += e.Cost
-	}
-}
-
-func (a *summaryAccumulator) into() *types.UsageSummary {
-	for i := 0; i < len(a.breakdowns); i++ {
-		for j := i + 1; j < len(a.breakdowns); j++ {
-			if a.breakdowns[j].Cost > a.breakdowns[i].Cost {
-				a.breakdowns[i], a.breakdowns[j] = a.breakdowns[j], a.breakdowns[i]
-			}
-		}
-	}
-	return &types.UsageSummary{
-		InputTokens:     a.tokens.InputTokens,
-		OutputTokens:    a.tokens.OutputTokens,
-		CacheCreation:   a.tokens.CacheCreation,
-		CacheRead:       a.tokens.CacheRead,
-		TotalCost:       a.cost,
-		ModelsUsed:      a.models,
-		ModelBreakdowns: a.breakdowns,
-	}
-}
 
 func totalsFromRows(rows []*types.UsageSummary) map[string]any {
 	var input, output, cc, cr uint64
