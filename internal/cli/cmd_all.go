@@ -9,21 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
-	"github.com/archhaeondlg/aiusage/internal/adapter/amp"
-	"github.com/archhaeondlg/aiusage/internal/adapter/claude"
-	"github.com/archhaeondlg/aiusage/internal/adapter/codebuff"
-	"github.com/archhaeondlg/aiusage/internal/adapter/codex"
-	"github.com/archhaeondlg/aiusage/internal/adapter/copilot"
-	"github.com/archhaeondlg/aiusage/internal/adapter/droid"
-	"github.com/archhaeondlg/aiusage/internal/adapter/gemini"
-	"github.com/archhaeondlg/aiusage/internal/adapter/goose"
-	"github.com/archhaeondlg/aiusage/internal/adapter/hermes"
-	"github.com/archhaeondlg/aiusage/internal/adapter/kilo"
-	"github.com/archhaeondlg/aiusage/internal/adapter/kimi"
-	"github.com/archhaeondlg/aiusage/internal/adapter/openclaw"
-	"github.com/archhaeondlg/aiusage/internal/adapter/opencode"
-	"github.com/archhaeondlg/aiusage/internal/adapter/pi"
-	"github.com/archhaeondlg/aiusage/internal/adapter/qwen"
+	_ "github.com/archhaeondlg/aiusage/internal/adapter/all"
 	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
@@ -31,17 +17,9 @@ import (
 
 // runAllAgents aggregates usage from all available adapters.
 func runAllAgents(_ *cobra.Command, alo adapter.LoadOptions) error {
-	allAdapters := []adapter.Adapter{
-		claude.NewAdapter(), codex.NewAdapter(), opencode.NewAdapter(),
-		amp.NewAdapter(), droid.NewAdapter(), codebuff.NewAdapter(),
-		hermes.NewAdapter(), pi.NewAdapter(), goose.NewAdapter(),
-		kilo.NewAdapter(), kimi.NewAdapter(), qwen.NewAdapter(),
-		copilot.NewAdapter(), gemini.NewAdapter(), openclaw.NewAdapter(),
-	}
-
 	var allEntries []*types.LoadedEntry
 	ctx := context.Background()
-	for _, adp := range allAdapters {
+	for _, adp := range adapter.AllAdapters() {
 		if !adp.IsAvailable() {
 			continue
 		}

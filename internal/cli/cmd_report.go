@@ -8,21 +8,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
-	"github.com/archhaeondlg/aiusage/internal/adapter/amp"
-	"github.com/archhaeondlg/aiusage/internal/adapter/claude"
-	"github.com/archhaeondlg/aiusage/internal/adapter/codebuff"
+	_ "github.com/archhaeondlg/aiusage/internal/adapter/all"
 	"github.com/archhaeondlg/aiusage/internal/adapter/codex"
-	"github.com/archhaeondlg/aiusage/internal/adapter/copilot"
-	"github.com/archhaeondlg/aiusage/internal/adapter/droid"
-	"github.com/archhaeondlg/aiusage/internal/adapter/gemini"
-	"github.com/archhaeondlg/aiusage/internal/adapter/goose"
-	"github.com/archhaeondlg/aiusage/internal/adapter/hermes"
-	"github.com/archhaeondlg/aiusage/internal/adapter/kilo"
-	"github.com/archhaeondlg/aiusage/internal/adapter/kimi"
-	"github.com/archhaeondlg/aiusage/internal/adapter/openclaw"
 	"github.com/archhaeondlg/aiusage/internal/adapter/opencode"
-	"github.com/archhaeondlg/aiusage/internal/adapter/pi"
-	"github.com/archhaeondlg/aiusage/internal/adapter/qwen"
 	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/summary"
 	"github.com/archhaeondlg/aiusage/internal/types"
@@ -62,35 +50,8 @@ func runAgentReport(cmd *cobra.Command, agent, kind string) error {
 		return opencode.Run(buildALO(), reportKindFromString(kind))
 	}
 
-	var adp adapter.Adapter
-	switch agent {
-	case "claude":
-		adp = claude.NewAdapter()
-	case "amp":
-		adp = amp.NewAdapter()
-	case "droid":
-		adp = droid.NewAdapter()
-	case "codebuff":
-		adp = codebuff.NewAdapter()
-	case "hermes":
-		adp = hermes.NewAdapter()
-	case "pi":
-		adp = pi.NewAdapter()
-	case "goose":
-		adp = goose.NewAdapter()
-	case "kilo":
-		adp = kilo.NewAdapter()
-	case "kimi":
-		adp = kimi.NewAdapter()
-	case "qwen":
-		adp = qwen.NewAdapter()
-	case "copilot":
-		adp = copilot.NewAdapter()
-	case "gemini":
-		adp = gemini.NewAdapter()
-	case "openclaw":
-		adp = openclaw.NewAdapter()
-	default:
+	adp, ok := adapter.GetAdapter(agent)
+	if !ok {
 		fmt.Fprintf(cmd.OutOrStdout(), "Unknown agent: %s\n", agent)
 		return nil
 	}

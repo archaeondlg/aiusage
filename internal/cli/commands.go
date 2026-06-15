@@ -108,26 +108,26 @@ var allCmd = &cobra.Command{
 // Agent-specific commands
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-var codexCmd = newAgentCmd("codex", "Show Codex CLI usage report", "Codex")
-var opencodeCmd = newAgentCmd("opencode", "Show OpenCode usage report", "OpenCode")
-var ampCmd = newAgentCmd("amp", "Show Amp usage report", "Amp")
-var droidCmd = newAgentCmd("droid", "Show Droid usage report", "Droid")
-var codebuffCmd = newAgentCmd("codebuff", "Show Codebuff usage report", "Codebuff")
-var hermesCmd = newAgentCmd("hermes", "Show Hermes Agent usage report", "Hermes")
-var piCmd = newAgentCmd("pi", "Show pi-agent usage report", "Pi")
-var gooseCmd = newAgentCmd("goose", "Show Goose usage report", "Goose")
-var kiloCmd = newAgentCmd("kilo", "Show Kilo Code usage report", "Kilo")
-var qwenCmd = newAgentCmd("qwen", "Show Qwen Code usage report", "Qwen")
-var copilotCmd = newAgentCmd("copilot", "Show GitHub Copilot CLI usage report", "Copilot")
-var geminiCmd = newAgentCmd("gemini", "Show Gemini CLI usage report", "Gemini")
-var kimiCmd = newAgentCmd("kimi", "Show Kimi CLI usage report", "Kimi")
-var openclawCmd = newAgentCmd("openclaw", "Show OpenClaw usage report", "OpenClaw")
+var codexCmd = newAgentCmd("codex", "Codex CLI")
+var opencodeCmd = newAgentCmd("opencode", "OpenCode")
+var ampCmd = newAgentCmd("amp", "Amp")
+var droidCmd = newAgentCmd("droid", "Droid")
+var codebuffCmd = newAgentCmd("codebuff", "Codebuff")
+var hermesCmd = newAgentCmd("hermes", "Hermes Agent")
+var piCmd = newAgentCmd("pi", "pi-agent")
+var gooseCmd = newAgentCmd("goose", "Goose")
+var kiloCmd = newAgentCmd("kilo", "Kilo Code")
+var qwenCmd = newAgentCmd("qwen", "Qwen Code")
+var copilotCmd = newAgentCmd("copilot", "GitHub Copilot CLI")
+var geminiCmd = newAgentCmd("gemini", "Gemini CLI")
+var kimiCmd = newAgentCmd("kimi", "Kimi CLI")
+var openclawCmd = newAgentCmd("openclaw", "OpenClaw")
 
-func newAgentCmd(use, short, _ string) *cobra.Command {
+func newAgentCmd(use, displayName string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   use,
-		Short: short,
-		Long:  fmt.Sprintf("Show token usage report for %s.", short),
+		Short: "Show " + displayName + " usage report",
+		Long:  fmt.Sprintf("Show token usage report for %s.", displayName),
 		RunE:  makeAgentRunner(use),
 	}
 	cmd.Flags().String("kind", "daily", "Report kind (daily, weekly, monthly, session)")

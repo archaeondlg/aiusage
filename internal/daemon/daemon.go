@@ -14,9 +14,7 @@ import (
 	"time"
 
 	"github.com/archhaeondlg/aiusage/internal/adapter"
-	"github.com/archhaeondlg/aiusage/internal/adapter/claude"
-	"github.com/archhaeondlg/aiusage/internal/adapter/codex"
-	"github.com/archhaeondlg/aiusage/internal/adapter/opencode"
+	_ "github.com/archhaeondlg/aiusage/internal/adapter/all"
 	"github.com/archhaeondlg/aiusage/internal/output"
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 	"github.com/archhaeondlg/aiusage/internal/summary"
@@ -39,13 +37,36 @@ type agentEntry struct {
 	displayName string
 }
 
+var agentDisplayNames = map[string]string{
+	"claude":   "Claude Code",
+	"codex":    "Codex CLI",
+	"opencode": "OpenCode",
+	"amp":      "Amp",
+	"codebuff": "Codebuff",
+	"copilot":  "GitHub Copilot CLI",
+	"droid":    "Droid",
+	"gemini":   "Gemini CLI",
+	"goose":    "Goose",
+	"hermes":   "Hermes Agent",
+	"kilo":     "Kilo Code",
+	"kimi":     "Kimi CLI",
+	"openclaw": "OpenClaw",
+	"pi":       "pi-agent",
+	"qwen":     "Qwen Code",
+}
+
 // agentRegistry returns all registered adapters.
 func agentRegistry() []agentEntry {
-	return []agentEntry{
-		{claude.NewAdapter(), "Claude Code"},
-		{codex.NewAdapter(), "Codex CLI"},
-		{opencode.NewAdapter(), "OpenCode"},
+	var result []agentEntry
+	for _, a := range adapter.AllAdapters() {
+		name := a.Name()
+		display := agentDisplayNames[name]
+		if display == "" {
+			display = name
+		}
+		result = append(result, agentEntry{a, display})
 	}
+	return result
 }
 
 // resolveAdapter returns one or more adapters based on the agent filter.
