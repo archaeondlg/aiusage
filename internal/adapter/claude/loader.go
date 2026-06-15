@@ -504,27 +504,37 @@ func readChunk(
 }
 
 func readChunkTimeout(path string, cr chunkRange, timeout time.Duration) ([]byte, error) {
-	ch := make(chan struct {
+	type readResult struct {
 		data []byte
 		err  error
-	}, 1)
+	}
+	ch := make(chan readResult, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	go func() {
 		f, err := os.Open(path)
 		if err != nil {
-			ch <- struct {
-				data []byte
-				err  error
-			}{nil, err}
+			ch <- readResult{nil, err}
 			return
 		}
 		defer f.Close()
 
 		if cr.start > 0 {
+			select {
+			case <-ctx.Done():
+				ch <- readResult{nil, ctx.Err()}
+				return
+			default:
+			}
 			f.Seek(cr.start, 0)
 			buf := make([]byte, 1)
 			for {
+				select {
+				case <-ctx.Done():
+					ch <- readResult{nil, ctx.Err()}
+					return
+				default:
+				}
 				n, err := f.Read(buf)
 				if n == 0 || err != nil {
 					break
@@ -535,11 +545,14 @@ func readChunkTimeout(path string, cr chunkRange, timeout time.Duration) ([]byte
 				}
 			}
 		}
+		select {
+		case <-ctx.Done():
+			ch <- readResult{nil, ctx.Err()}
+			return
+		default:
+		}
 		data, err := io.ReadAll(io.LimitReader(f, cr.end-cr.start))
-		ch <- struct {
-			data []byte
-			err  error
-		}{data, err}
+		ch <- readResult{data, err}
 	}()
 	select {
 	case r := <-ch:
