@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/archhaeondlg/aiusage/internal/dateutil"
-	"github.com/archhaeondlg/aiusage/internal/types"
 )
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -134,7 +133,7 @@ func classifyLine(line []byte) lineKind {
 func visitCodexSessionFile(
 	sessionsDir string,
 	path string,
-	visit func(types.CodexTokenUsageEvent) error,
+	visit func(TokenUsageEvent) error,
 ) error {
 	isSubagent := isSubagentSession(path)
 	var replaySecond []byte
@@ -217,7 +216,7 @@ func visitSessionEntry(
 	previousTotals **codexRawUsage,
 	currentModel *string,
 	currentModelIsFallback *bool,
-	visit func(types.CodexTokenUsageEvent) error,
+	visit func(TokenUsageEvent) error,
 ) {
 	t := entry.Type
 	if t == nil {
@@ -284,7 +283,7 @@ func visitSessionEntry(
 	if cached > rawUsage.InputTokens {
 		cached = rawUsage.InputTokens
 	}
-	visit(types.CodexTokenUsageEvent{
+	visit(TokenUsageEvent{
 		SessionID:           sessionID,
 		Timestamp:           ts,
 		Model:               &model,
@@ -303,7 +302,7 @@ func addHeadlessEvent(
 	fallbackTS string,
 	currentModel *string,
 	currentModelIsFallback *bool,
-	visit func(types.CodexTokenUsageEvent) error,
+	visit func(TokenUsageEvent) error,
 ) {
 	rawUsage := normalizeHeadlessUsage(entry)
 	if rawUsage == nil || rawUsage.isZero() {
@@ -326,7 +325,7 @@ func addHeadlessEvent(
 	if cached > rawUsage.InputTokens {
 		cached = rawUsage.InputTokens
 	}
-	visit(types.CodexTokenUsageEvent{
+	visit(TokenUsageEvent{
 		SessionID:           sessionID,
 		Timestamp:           eventTS,
 		Model:               &model,
@@ -339,7 +338,7 @@ func addHeadlessEvent(
 	})
 }
 
-func addHeadlessEventFromValue(sessionID string, raw map[string]json.RawMessage, fallbackTS string, currentModel *string, currentModelIsFallback *bool, visit func(types.CodexTokenUsageEvent) error) {
+func addHeadlessEventFromValue(sessionID string, raw map[string]json.RawMessage, fallbackTS string, currentModel *string, currentModelIsFallback *bool, visit func(TokenUsageEvent) error) {
 	data, _ := json.Marshal(raw)
 	var entry codexParsedLine
 	if json.Unmarshal(data, &entry) != nil {

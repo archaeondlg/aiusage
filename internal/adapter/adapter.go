@@ -3,6 +3,7 @@ package adapter
 
 import (
 	"context"
+	"errors"
 
 	"github.com/archhaeondlg/aiusage/internal/pricing"
 	"github.com/archhaeondlg/aiusage/internal/types"
@@ -19,6 +20,12 @@ type LoadOptions struct {
 	ProjectFilter string
 	Verbose       int
 }
+
+// Sentinel errors for adapter operations.
+var (
+	ErrNoData   = errors.New("no usage data found")
+	ErrNotAvail = errors.New("agent not available")
+)
 
 // Error represents an adapter-level error with a user-facing message.
 type Error struct {

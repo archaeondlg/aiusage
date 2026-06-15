@@ -5,6 +5,49 @@ import (
 	"encoding/json"
 )
 
+// RawUsage mirrors the Rust CodexRawUsage.
+type RawUsage struct {
+	InputTokens           uint64
+	CachedInputTokens     uint64
+	OutputTokens          uint64
+	ReasoningOutputTokens uint64
+	TotalTokens           uint64
+}
+
+// TokenUsageEvent is a parsed Codex token_count event.
+type TokenUsageEvent struct {
+	SessionID            string
+	Timestamp            string
+	Model                *string
+	InputTokens          uint64
+	CachedInputTokens    uint64
+	OutputTokens         uint64
+	ReasoningOutputTokens uint64
+	TotalTokens          uint64
+	IsFallbackModel      bool
+}
+
+// ModelUsage tracks usage per model for Codex.
+type ModelUsage struct {
+	InputTokens           uint64
+	CachedInputTokens     uint64
+	OutputTokens          uint64
+	ReasoningOutputTokens uint64
+	TotalTokens           uint64
+	IsFallback            bool
+}
+
+// Group holds aggregated Codex usage by group key.
+type Group struct {
+	InputTokens           uint64
+	CachedInputTokens     uint64
+	OutputTokens          uint64
+	ReasoningOutputTokens uint64
+	TotalTokens           uint64
+	Models                map[string]*ModelUsage
+	LastActivity          *string
+}
+
 // Embedded Codex auto-review model fallback table.
 // Maps release dates to concrete model names.
 //

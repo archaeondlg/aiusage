@@ -108,7 +108,7 @@ func aggregateFilesParallel(sessionsDir string, files []string) map[string]*code
 }
 
 func aggregateFile(sessionsDir, file string, groups map[string]*codexGroupData) {
-	visitCodexSessionFile(sessionsDir, file, func(event types.CodexTokenUsageEvent) error {
+	visitCodexSessionFile(sessionsDir, file, func(event TokenUsageEvent) error {
 		model := ""
 		if event.Model != nil {
 			model = *event.Model
@@ -158,7 +158,7 @@ func aggregateFile(sessionsDir, file string, groups map[string]*codexGroupData) 
 }
 
 // AggregateEvents aggregates pre-loaded events into groups.
-func AggregateEvents(events []types.CodexTokenUsageEvent, kind types.ReportKind, timezone string) map[string]*codexGroupData {
+func AggregateEvents(events []TokenUsageEvent, kind types.ReportKind, timezone string) map[string]*codexGroupData {
 	groups := make(map[string]*codexGroupData)
 	tz := dateutil.ParseTZ(&timezone)
 
@@ -221,12 +221,12 @@ func AggregateEvents(events []types.CodexTokenUsageEvent, kind types.ReportKind,
 }
 
 // FilterEventsByDate filters events by since/until date bounds.
-func FilterEventsByDate(events []types.CodexTokenUsageEvent, since, until string, timezone string) []types.CodexTokenUsageEvent {
+func FilterEventsByDate(events []TokenUsageEvent, since, until string, timezone string) []TokenUsageEvent {
 	if since == "" && until == "" {
 		return events
 	}
 	tz := dateutil.ParseTZ(&timezone)
-	var filtered []types.CodexTokenUsageEvent
+	var filtered []TokenUsageEvent
 	for _, event := range events {
 		ts, err := dateutil.ParseTimestamp(event.Timestamp)
 		if err != nil {
@@ -307,7 +307,7 @@ func newDedupeShards(count int) []*dedupeShard {
 	return shards
 }
 
-func dedupeShardInsert(shards []*dedupeShard, event types.CodexTokenUsageEvent, timestamp string) bool {
+func dedupeShardInsert(shards []*dedupeShard, event TokenUsageEvent, timestamp string) bool {
 	model := ""
 	if event.Model != nil {
 		model = *event.Model

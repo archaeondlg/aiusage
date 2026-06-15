@@ -192,53 +192,6 @@ type Projection struct {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Codex-specific types
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// CodexRawUsage mirrors the Rust CodexRawUsage.
-type CodexRawUsage struct {
-	InputTokens          uint64
-	CachedInputTokens    uint64
-	OutputTokens         uint64
-	ReasoningOutputTokens uint64
-	TotalTokens          uint64
-}
-
-// CodexTokenUsageEvent is a parsed Codex token_count event.
-type CodexTokenUsageEvent struct {
-	SessionID            string
-	Timestamp            string
-	Model                *string
-	InputTokens          uint64
-	CachedInputTokens    uint64
-	OutputTokens         uint64
-	ReasoningOutputTokens uint64
-	TotalTokens          uint64
-	IsFallbackModel      bool
-}
-
-// CodexModelUsage tracks usage per model for Codex.
-type CodexModelUsage struct {
-	InputTokens          uint64
-	CachedInputTokens    uint64
-	OutputTokens         uint64
-	ReasoningOutputTokens uint64
-	TotalTokens          uint64
-	IsFallback           bool
-}
-
-// CodexGroup holds aggregated Codex usage by group key.
-type CodexGroup struct {
-	InputTokens          uint64
-	CachedInputTokens    uint64
-	OutputTokens         uint64
-	ReasoningOutputTokens uint64
-	TotalTokens          uint64
-	Models               map[string]*CodexModelUsage
-	LastActivity         *string
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Enums
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
