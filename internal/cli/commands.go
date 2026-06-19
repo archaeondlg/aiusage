@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -105,37 +103,7 @@ var allCmd = &cobra.Command{
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Agent-specific commands
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-var codexCmd = newAgentCmd("codex", "Codex CLI")
-var opencodeCmd = newAgentCmd("opencode", "OpenCode")
-var ampCmd = newAgentCmd("amp", "Amp")
-var droidCmd = newAgentCmd("droid", "Droid")
-var codebuffCmd = newAgentCmd("codebuff", "Codebuff")
-var hermesCmd = newAgentCmd("hermes", "Hermes Agent")
-var piCmd = newAgentCmd("pi", "pi-agent")
-var gooseCmd = newAgentCmd("goose", "Goose")
-var kiloCmd = newAgentCmd("kilo", "Kilo Code")
-var qwenCmd = newAgentCmd("qwen", "Qwen Code")
-var copilotCmd = newAgentCmd("copilot", "GitHub Copilot CLI")
-var geminiCmd = newAgentCmd("gemini", "Gemini CLI")
-var kimiCmd = newAgentCmd("kimi", "Kimi CLI")
-var openclawCmd = newAgentCmd("openclaw", "OpenClaw")
-
-func newAgentCmd(use, displayName string) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: "Show " + displayName + " usage report",
-		Long:  fmt.Sprintf("Show token usage report for %s.", displayName),
-		RunE:  makeAgentRunner(use),
-	}
-	cmd.Flags().String("kind", "daily", "Report kind (daily, weekly, monthly, session)")
-	return cmd
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Command stub dispatchers
+// Command dispatchers
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 func runDailyCmd(cmd *cobra.Command, args []string) error {
@@ -169,14 +137,3 @@ func runReportCmd(cmd *cobra.Command, kind string) error {
 	return runAgentReport(cmd, agent, kind)
 }
 
-// makeAgentRunner creates a runner that forces a specific agent via --agent flag.
-func makeAgentRunner(agent string) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		cmd.Flags().Set("agent", agent)
-		kind, _ := cmd.Flags().GetString("kind")
-		if kind == "" {
-			kind = "daily"
-		}
-		return runAgentReport(cmd, agent, kind)
-	}
-}

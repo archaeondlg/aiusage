@@ -9,9 +9,12 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "aiusage",
 	Short: "Analyze agent CLI token usage and costs from local data",
-	Long: `aiusage reads local usage logs from Claude Code, Codex, OpenCode, Amp,
-Droid, Codebuff, Hermes Agent, pi-agent, Goose, OpenClaw, Kilo, Kimi,
-Qwen, GitHub Copilot CLI, and Gemini CLI to track tokens and estimate costs.`,
+	Long: `aiusage reads local usage logs from 15 coding agent CLIs
+(Claude Code, Codex, OpenCode, etc.) to track tokens and estimate costs.
+
+Use -a/--agent to select an agent (default: claude), or "all" for all agents.
+Use -m/--model to filter by model name.
+Use -p/--project to filter by project.`,
 	Version: "1.0.0",
 	RunE:    runDefault,
 }
@@ -60,19 +63,4 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(allCmd)
 
-	// Agent-specific subcommands.
-	rootCmd.AddCommand(codexCmd)
-	rootCmd.AddCommand(opencodeCmd)
-	rootCmd.AddCommand(ampCmd)
-	rootCmd.AddCommand(droidCmd)
-	rootCmd.AddCommand(codebuffCmd)
-	rootCmd.AddCommand(hermesCmd)
-	rootCmd.AddCommand(piCmd)
-	rootCmd.AddCommand(gooseCmd)
-	rootCmd.AddCommand(kiloCmd)
-	rootCmd.AddCommand(qwenCmd)
-	rootCmd.AddCommand(copilotCmd)
-	rootCmd.AddCommand(geminiCmd)
-	rootCmd.AddCommand(kimiCmd)
-	rootCmd.AddCommand(openclawCmd)
 }
