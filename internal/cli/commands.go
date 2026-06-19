@@ -139,29 +139,40 @@ func newAgentCmd(use, displayName string) *cobra.Command {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 func runDailyCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "claude", "daily")
+	return runReportCmd(cmd, "daily")
 }
 func runWeeklyCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "claude", "weekly")
+	return runReportCmd(cmd, "weekly")
 }
 func runMonthlyCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "claude", "monthly")
+	return runReportCmd(cmd, "monthly")
 }
 func runSessionCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "claude", "session")
+	return runReportCmd(cmd, "session")
 }
 func runBlocksCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "claude", "blocks")
+	return runReportCmd(cmd, "blocks")
 }
 func runStatuslineCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "claude", "statusline")
+	return runReportCmd(cmd, "statusline")
 }
 func runAllCmd(cmd *cobra.Command, args []string) error {
-	return runAgentReport(cmd, "all", "")
+	return runReportCmd(cmd, "all")
 }
 
+// runReportCmd reads --agent from flags and dispatches to runAgentReport.
+func runReportCmd(cmd *cobra.Command, kind string) error {
+	agent := flagStr(cmd, "agent")
+	if kind == "all" {
+		agent = "all"
+	}
+	return runAgentReport(cmd, agent, kind)
+}
+
+// makeAgentRunner creates a runner that forces a specific agent via --agent flag.
 func makeAgentRunner(agent string) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		cmd.Flags().Set("agent", agent)
 		kind, _ := cmd.Flags().GetString("kind")
 		if kind == "" {
 			kind = "daily"

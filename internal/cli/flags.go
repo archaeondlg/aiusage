@@ -2,6 +2,7 @@ package cli
 
 import (
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -16,21 +17,22 @@ type RunOptions struct {
 	Kind  string
 
 	// Shared options.
-	JSON          bool
-	Compact       bool
-	Breakdown     bool
-	NoColor       bool
-	SingleThread  bool
-	Verbose       int
-	Color         string
-	Timezone      string
-	Since         string
-	Until         string
-	Order         string
-	JQ            string
-	Project       string
+	JSON           bool
+	Compact        bool
+	Breakdown      bool
+	NoColor        bool
+	SingleThread   bool
+	Verbose        int
+	Color          string
+	Timezone       string
+	Since          string
+	Until          string
+	Order          string
+	JQ             string
+	Project        string
 	ProjectAliases string
-	StartOfWeek   string
+	StartOfWeek    string
+	ModelFilter    string
 
 	// Blocks-specific.
 	TokenLimit    string
@@ -80,6 +82,7 @@ func parseRunOptions(cmd *cobra.Command) (*RunOptions, error) {
 	opts.Timezone = getString(v, "timezone")
 	opts.Since = normalizeDateBound(getString(v, "since"))
 	opts.Until = normalizeDateBound(getString(v, "until"))
+	opts.ModelFilter = getString(v, "model")
 	opts.Order = getString(v, "order")
 	opts.JQ = getString(v, "jq")
 	opts.Project = getString(v, "project")
@@ -157,5 +160,21 @@ func normalizeDateBound(s string) string {
 	if s == "" {
 		return ""
 	}
-	return strings.ReplaceAll(s, "-", "")
+	// Try parsing various time formats, always returning compact YYYYMMDD.
+	for _, layout := range []string{
+		"2006-01-02",
+		"2006-01-02 15:04",
+		"2006-01-02 15:04:05",
+	} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.Format("20060102")
+		}
+	}
+	// Fallback: strip non-digit chars.
+	return strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, s)
 }

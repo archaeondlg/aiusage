@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -104,6 +105,11 @@ func runAgentReport(cmd *cobra.Command, agent, kind string) error {
 		return ""
 	}
 	rows = summary.FilterAndSort(rows, opts.Since, opts.Until, opts.SortOrder(), dateFn)
+
+	// Model filter — fuzzy match against ModelsUsed.
+	if opts.ModelFilter != "" {
+		rows = filterByModel(rows, opts.ModelFilter)
+	}
 
 	if opts.JSON {
 		report, err := adp.ReportJSON(rows, reportKind)
@@ -230,4 +236,19 @@ func titleForAgent(agent string) string {
 	default:
 		return agent + " Token Usage Report"
 	}
+}
+
+// filterByModel filters rows to those whose ModelsUsed contain the given pattern (case-insensitive).
+func filterByModel(rows []*types.UsageSummary, pattern string) []*types.UsageSummary {
+	pat := strings.ToLower(pattern)
+	var filtered []*types.UsageSummary
+	for _, row := range rows {
+		for _, m := range row.ModelsUsed {
+			if strings.Contains(strings.ToLower(m), pat) {
+				filtered = append(filtered, row)
+				break
+			}
+		}
+	}
+	return filtered
 }
